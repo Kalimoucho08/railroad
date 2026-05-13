@@ -27,20 +27,42 @@ Les sources techniques sur l'hébergement ont servi à cadrer le périmètre ré
 
 ## Ce qui a été fait
 
-Le projet dispose déjà d'un prototype fonctionnel jouable dans un fichier HTML unique, adapté à un hébergement très simple.[cite:1] Une carte fixe relie plusieurs villes, sites de production et industries, avec un système de construction de voies entre nœuds et une logique de partie limitée dans le temps.[cite:20][cite:23]
+Le projet est passé d'un prototype V3 en fichier HTML unique à une V3.6 modulaire en temps réel, structurée en 8 fichiers JS, CSS et HTML séparés.[cite:1]
 
-Les mécaniques actuellement présentes sont les suivantes :
+### V3 (originale)
+Fichier HTML unique ~1600 lignes. Carte fixe, 6 ressources, construction de voies, achat de convois, animation continue, comptabilité mensuelle tour par tour.
 
-- Construction et suppression de lignes ferroviaires entre villes, producteurs et industries.
-- Gestion d'au moins cinq ressources économiques distinctes, auxquelles s'ajoutent les passagers comme flux spécifique.[cite:20][cite:21][cite:23]
-- Fluctuation de prix par ressource afin de donner un intérêt tactique aux choix de lignes et d'affectation.
-- Trains visibles circulant sur les voies avec animation continue dans la carte.
-- Wagons visibles, colorés selon la cargaison, qui se chargent et se déchargent dans les gares.
-- Dépôts et stocks locaux par site, visibles sur la carte sous forme de mini-réserves.
-- Achat manuel de convois dédiés à une ligne et à une ressource donnée.
-- Calcul mensuel des recettes, de l'entretien et du bénéfice net.
+### V3.5 (revue et refactor)
+Suite à une review complète, 16 correctifs appliqués :
 
-Le prototype s'est donc déplacé d'une démonstration économique assez abstraite vers une représentation déjà plus proche d'un vrai jeu ferroviaire, où l'on voit circuler les trains, où les gares accumulent des stocks, et où l'affectation d'un train à une marchandise devient une décision lisible et concrète.[cite:36][cite:39][cite:65][cite:75]
+- **Architecture** : découpage modulaire en 8 fichiers JS (config, game-state, economy, tracks, trains, renderer, ui, main)
+- **Bug critique corrigé** : les trains non-passagers restaient bloqués après la première livraison. Machine à états refaite en 4 phases (loading → moving → unloading → returning) sans inversion du from/to
+- **Qualité** : noms de variables clarifiés (`monthlyRevenue`/`lifetimeProfit`), IDs séquentiels, constantes extraites dans `CONFIG`
+- **Économie** : production différenciée par type de site (`prodRate`), démolition rembourse 25% du coût proportionnel
+- **UI** : 14 sites affichés (plus seulement 8), log 50 entrées scrollable, survol carte avec surbrillance, `image-rendering: pixelated` retiré
+- **Performance** : animation en pause quand l'onglet est en arrière-plan
+
+### V3.6 (temps réel)
+- Gameplay converti en **temps réel** avec vitesse variable (⏸ Pause, ▶ 1×, ▶▶ 2×, ▶▶▶ 4×)
+- Le mois défile automatiquement (~15s à 1×), construction et achat possibles en parallèle
+- Barre de progression du mois visible dans le panneau Compagnie
+- Fin de partie automatique après 24 mois avec pause automatique
+- Delta-time dans la boucle `requestAnimationFrame`, `processMonthEnd` dans le module economy
+
+### Mécaniques présentes (V3.6)
+
+- Construction et suppression de lignes ferroviaires entre tous les types de sites.
+- 6 ressources économiques distinctes (charbon, bois, grain, acier, textile, passagers).
+- Fluctuation mensuelle des prix par ressource.
+- Trains visibles circulant sur les voies avec animation continue.
+- Wagons colorés selon la cargaison, chargement et déchargement visuels.
+- Dépôts et stocks locaux par site, visibles sur la carte.
+- Achat de convois dédiés à une ligne et une ressource.
+- Machine à états des trains : chargement → trajet aller → déchargement → retour à vide.
+- Comptabilité mensuelle automatique (recettes, entretien, bénéfice net).
+- Production différenciée par type de site (mine 2.5×, ferme 2.5×, ville 1×, etc.).
+- Survol de la carte avec surbrillance des sites.
+- Thème clair/sombre.
 
 ## Ce qui reste à faire
 
@@ -120,6 +142,8 @@ Ordre conseillé :
 
 ## État de maturité du projet
 
-À ce stade, Rail Baron 1890 n'est pas encore un jeu complet, mais c'est déjà un bon prototype directionnel. Il valide l'idée centrale, la compatibilité technique avec un hébergement simple, et plusieurs sensations de gameplay importantes : construire, affecter, observer les trains, voir les wagons se charger et lire les flux sur la carte.[cite:1][cite:20][cite:23][cite:65]
+À ce stade, Rail Baron 1890 est un prototype modulaire solide, jouable en temps réel, avec une architecture propre prête pour les extensions V4. La V3.6 valide le concept central, la compatibilité hébergement statique, et l'essentiel des sensations de gameplay : construire, affecter, observer les trains circuler, voir les wagons se charger et les flux transiter sur la carte.[cite:1][cite:20][cite:23][cite:65]
 
-La valeur du prototype est donc moins dans sa finition actuelle que dans le fait qu'il prouve qu'un jeu de gestion ferroviaire solo, inspiré de Railroad Tycoon Amiga, peut être transposé de façon crédible dans une web app légère et hébergeable gratuitement, à condition de garder une architecture sobre et un périmètre de simulation maîtrisé.[cite:1][cite:6][cite:12][cite:20][cite:23]
+La V3.5 a assaini la base technique (revue de code, 16 correctifs, architecture modulaire). La V3.6 a résolu le problème UX majeur en passant au temps réel avec vitesse variable, rendant le jeu plus vivant et plus fidèle à l'esprit Railroad Tycoon.
+
+Prochaine étape logique : V4 centrée sur l'interface rétro Amiga et la profondeur ferroviaire (locomotives multiples, chaînes industrielles, fiches détaillées).
