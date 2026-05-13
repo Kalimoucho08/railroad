@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="fr" data-theme="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>railroad-tycoon-lite</title>
+  <link href="https://api.fontshare.com/v2/css?f[]=satoshi@400,500,700&display=swap" rel="stylesheet">
+  <style>
+    :root,[data-theme="light"]{--text-xs:clamp(.75rem,.7rem + .25vw,.875rem);--text-sm:clamp(.875rem,.8rem + .35vw,1rem);--text-base:clamp(1rem,.95rem + .25vw,1.125rem);--text-lg:clamp(1.125rem,1rem + .75vw,1.5rem);--space-1:.25rem;--space-2:.5rem;--space-3:.75rem;--space-4:1rem;--space-6:1.5rem;--space-8:2rem;--color-bg:#efe6d2;--color-surface:#f7f0de;--color-surface-2:#fbf7ed;--color-border:#8a7f63;--color-divider:#b6aa89;--color-text:#1d160e;--color-text-muted:#5a5140;--color-text-inverse:#f8f1e0;--color-primary:#7b4f19;--color-primary-hover:#623d11;--color-good:#55743b;--color-bad:#8e4338;--shadow-sm:0 1px 0 rgba(34,21,9,.16);--shadow-md:0 4px 12px rgba(34,21,9,.18);--font-body:'Satoshi',Arial,sans-serif}
+    [data-theme="dark"]{--color-bg:#1c160f;--color-surface:#2a2117;--color-surface-2:#352a1e;--color-border:#77684f;--color-divider:#5a4d3a;--color-text:#f0e3c1;--color-text-muted:#baa782;--color-text-inverse:#18110a;--color-primary:#bd8b38;--color-primary-hover:#d3a14c;--color-good:#7ea760;--color-bad:#cf7866;--shadow-sm:0 1px 0 rgba(0,0,0,.35);--shadow-md:0 8px 24px rgba(0,0,0,.35)}
+    *,*::before,*::after{box-sizing:border-box;margin:0;padding:0} html,body{height:100%} body{font-family:var(--font-body);font-size:var(--text-base);line-height:1.45;background:var(--color-bg);color:var(--color-text)} button,input,select{font:inherit;color:inherit} button{cursor:pointer;border:none;background:none} option{color:#111}
+    .app{display:grid;grid-template-columns:minmax(310px,390px) 1fr;min-height:100vh}.panel,.hud,.log{background:var(--color-surface);border:2px solid var(--color-border);box-shadow:var(--shadow-sm)}
+    .sidebar{padding:var(--space-4);display:flex;flex-direction:column;gap:var(--space-4);border-right:3px solid var(--color-divider);background:linear-gradient(180deg,var(--color-surface),var(--color-surface-2));overflow:auto}.brand{display:flex;justify-content:space-between;gap:var(--space-3);align-items:start}.logo-title{font-size:var(--text-lg);font-weight:700;letter-spacing:.03em;text-transform:uppercase}.logo-sub{font-size:var(--text-xs);color:var(--color-text-muted);text-transform:uppercase;letter-spacing:.12em}.theme-btn{min-width:44px;min-height:44px;border:2px solid var(--color-border);background:var(--color-surface-2)}
+    .panel h2{font-size:var(--text-sm);text-transform:uppercase;letter-spacing:.09em;padding:var(--space-2) var(--space-3);background:var(--color-surface-2);border-bottom:2px solid var(--color-divider)}.panel-body{padding:var(--space-3);display:grid;gap:var(--space-3)}.stats{display:grid;grid-template-columns:1fr 1fr;gap:var(--space-2)}.stat{padding:var(--space-2);border:1px solid var(--color-divider);background:rgba(255,255,255,.03)}.label{font-size:var(--text-xs);text-transform:uppercase;letter-spacing:.08em;color:var(--color-text-muted)}.value{font-weight:700}
+    .toolbar{display:grid;grid-template-columns:1fr 1fr;gap:var(--space-2)}.btn,.select,.input{padding:var(--space-2) var(--space-3);border:2px solid var(--color-border);background:var(--color-surface-2);min-height:44px}.btn.active,.btn.primary{background:var(--color-primary);color:var(--color-text-inverse);border-color:var(--color-primary-hover)}
+    .mini{font-size:var(--text-xs);color:var(--color-text-muted)}.resource-list,.route-list,.train-list,.station-list{display:grid;gap:var(--space-2)}.resource-row,.route-row,.train-row,.station-row{display:grid;grid-template-columns:1fr auto;gap:var(--space-2);align-items:center;padding:var(--space-2);border:1px solid var(--color-divider);background:rgba(255,255,255,.02)}
+    .assign-grid{display:grid;gap:var(--space-2)}.main{display:grid;grid-template-rows:auto 1fr auto;gap:var(--space-3);padding:var(--space-3)}.hud{display:flex;justify-content:space-between;align-items:center;padding:var(--space-3);gap:var(--space-3);flex-wrap:wrap}.chip{padding:var(--space-1) var(--space-2);border:1px solid var(--color-divider);background:var(--color-surface-2);font-size:var(--text-xs);text-transform:uppercase}
+    .map-shell{position:relative;background:var(--color-surface);border:2px solid var(--color-border);box-shadow:var(--shadow-md);padding:10px} canvas{width:100%;height:auto;display:block;background:#12324a;border:2px inset var(--color-border);image-rendering:pixelated;aspect-ratio:16/10}.legend{display:flex;gap:var(--space-2);flex-wrap:wrap;padding-top:var(--space-2);font-size:var(--text-xs);color:var(--color-text-muted)}
+    .swatch{display:inline-block;width:10px;height:10px;border:1px solid rgba(0,0,0,.35);margin-right:6px}.log{padding:var(--space-2) var(--space-3);font-size:var(--text-sm);min-height:104px;max-height:140px;overflow:auto;white-space:pre-line}.good{color:var(--color-good)}.bad{color:var(--color-bad)}
+    @media (max-width:1040px){.app{grid-template-columns:1fr}.sidebar{order:2;border-right:none;border-top:3px solid var(--color-divider)}.main{order:1}}
+  </style>
+</head>
+<body>
+<div class="app">
+  <aside class="sidebar">
+    <div class="brand">
+      <div><div class="logo-title">Rail Baron 1890</div><div class="logo-sub">V3 · gares, stocks et convois</div></div>
+      <button class="theme-btn" id="themeBtn" aria-label="Changer de thème">☼</button>
+    </div>
+
+    <section class="panel"><h2>Compagnie</h2><div class="panel-body">
+      <div class="stats">
+        <div class="stat"><div class="label">Capital</div><div class="value" id="cashValue"></div></div>
+        <div class="stat"><div class="label">Profit</div><div class="value" id="profitValue"></div></div>
+        <div class="stat"><div class="label">Mois</div><div class="value" id="turnValue"></div></div>
+        <div class="stat"><div class="label">Convois</div><div class="value" id="trainCount"></div></div>
+      </div>
+      <div class="toolbar">
+        <button class="btn active" data-tool="rail">Poser voie<div class="mini">Construire une ligne</div></button>
+        <button class="btn" data-tool="delete">Démolir<div class="mini">Supprimer une ligne</div></button>
+        <button class="btn" id="advanceBtn">Avancer 1 mois<div class="mini">Comptabilité</div></button>
+        <button class="btn" id="restartBtn">Nouvelle partie<div class="mini">Réinitialiser</div></button>
+      </div>
+      <div class="mini" id="toolStatus">Outil actif : poser voie.</div>
+    </div></section>
+
+    <section class="panel"><h2>Affecter un convoi</h2><div class="panel-body assign-grid">
+      <select class="select" id="routeSelect"></select>
+      <select class="select" id="resourceSelect"></select>
+      <button class="btn primary" id="buyTrainBtn">Acheter un train dédié<div class="mini">120$ locomotive + wagons</div></button>
+      <div class="mini">Un train ne transporte qu'une ressource ou des passagers sur sa ligne.</div>
+    </div></section>
+
+    <section class="panel"><h2>Cours des marchandises</h2><div class="panel-body resource-list" id="resourceList"></div></section>
+    <section class="panel"><h2>Gares et stocks</h2><div class="panel-body station-list" id="stationList"></div></section>
+    <section class="panel"><h2>Convois</h2><div class="panel-body train-list" id="trainList"></div></section>
+  </aside>
+
+  <main class="main">
+    <header class="hud">
+      <div style="display:flex;gap:12px;flex-wrap:wrap">
+        <div class="chip">Dépôts visibles</div>
+        <div class="chip">Wagons spécialisés</div>
+        <div class="chip">Stock par gare</div>
+        <div class="chip" id="selectedBadge">Sélection : aucune</div>
+      </div>
+      <div style="display:flex;gap:12px;flex-wrap:wrap">
+        <div class="chip" id="networkBadge">Voies : 0</div>
+        <div class="chip">Approche inspirée du genre Railroad Tycoon</div>
+      </div>
+    </header>
+
+    <section class="map-shell">
+      <canvas id="gameCanvas" width="1120" height="700"></canvas>
+      <div class="legend">
+        <span><span class="swatch" style="background:#f0d37a"></span>Ville / gare</span>
+        <span><span class="swatch" style="background:#6e4a24"></span>Ressources brutes</span>
+        <span><span class="swatch" style="background:#9aa4ad"></span>Industrie acier</span>
+        <span><span class="swatch" style="background:#b55f2a"></span>Industrie textile</span>
+        <span><span class="swatch" style="background:#111"></span>Locomotive</span>
+      </div>
+    </section>
+
+    <section class="log" id="logBox"></section>
+    <div class="mini">Le jeu original et ses descendants mettent l'accent sur stations, trains, cargaisons, affectation des convois et chaînes économiques complexes ; cette V3 va dans ce sens avec dépôt, stockage local et train dédié par ligne. [web:65][web:70][web:75]</div>
+  </main>
+</div>
+
+<script>
+const RESOURCES = {
+  charbon:{label:'Charbon', color:'#2f2f32', base:30},
+  bois:{label:'Bois', color:'#6e4a24', base:24},
+  grain:{label:'Grain', color:'#c9a845', base:22},
+  acier:{label:'Acier', color:'#9aa4ad', base:48},
+  textile:{label:'Textile', color:'#b65d8f', base:44},
+  passagers:{label:'Passagers', color:'#7fd0d8', base:36}
+};
+const NODES = [
+  {name:'Lille', x:170, y:120, type:'city', produces:['passagers'], demands:['acier','grain','bois','textile']},
+  {name:'Rouen', x:320, y:170, type:'city', produces:['passagers'], demands:['grain','bois','acier']},
+  {name:'Paris', x:470, y:180, type:'city', produces:['passagers'], demands:['grain','bois','acier','textile','charbon']},
+  {name:'Nancy', x:670, y:160, type:'city', produces:['passagers'], demands:['charbon','acier','textile']},
+  {name:'Lyon', x:620, y:360, type:'city', produces:['passagers'], demands:['grain','charbon','acier','textile']},
+  {name:'Nantes', x:220, y:360, type:'city', produces:['passagers'], demands:['grain','bois','textile']},
+  {name:'Bordeaux', x:250, y:530, type:'city', produces:['passagers'], demands:['grain','bois','acier']},
+  {name:'Marseille', x:760, y:540, type:'city', produces:['passagers'], demands:['grain','acier','textile','charbon']},
+  {name:'Forêt des Ardennes', x:520, y:70, type:'forest', produces:['bois'], demands:[]},
+  {name:'Bassin Minier', x:760, y:90, type:'coal', produces:['charbon'], demands:[]},
+  {name:'Plaine de Beauce', x:390, y:300, type:'farm', produces:['grain'], demands:[]},
+  {name:'Hauts Fourneaux', x:860, y:260, type:'steel', produces:['acier'], demands:['charbon']},
+  {name:'Filature du Midi', x:860, y:430, type:'textile', produces:['textile'], demands:['grain','bois']},
+  {name:'Port Atlantique', x:110, y:500, type:'port', produces:['bois'], demands:['acier','textile','charbon','grain']}
+];
+const state = {cash:1500,startCash:1500,turn:1,maxTurns:24,tool:'rail',selectedNode:null,edges:[],trains:[],prices:{},stocks:{},log:['Compagnie créée. Construis des lignes puis affecte des trains.']};
+const canvas = document.getElementById('gameCanvas'); const ctx = canvas.getContext('2d');
+const routeSelect=document.getElementById('routeSelect'), resourceSelect=document.getElementById('resourceSelect'), resourceList=document.getElementById('resourceList'), trainList=document.getElementById('trainList'), stationList=document.getElementById('stationList'), logBox=document.getElementById('logBox');
+const money=v=>`${v>=0?'':'-'}$${Math.abs(Math.round(v))}`;
+const dist=(a,b)=>Math.hypot(a.x-b.x,a.y-b.y);
+const findNode=name=>NODES.find(n=>n.name===name);
+function addLog(txt){state.log.unshift(txt);state.log=state.log.slice(0,12);logBox.textContent=state.log.join('\n');}
+function randPrices(){Object.entries(RESOURCES).forEach(([k,v])=>state.prices[k]=v.base+Math.round((Math.sin(state.turn+v.base)+1)*6+Math.random()*5));}
+function initStocks(){NODES.forEach(n=>{state.stocks[n.name]={}; Object.keys(RESOURCES).forEach(r=>state.stocks[n.name][r]=0); n.produces.forEach(r=>state.stocks[n.name][r]=4 + Math.floor(Math.random()*4));});}
+function edgeExists(a,b){return state.edges.some(e=>(e.a===a&&e.b===b)||(e.a===b&&e.b===a));}
+function getNodeAt(x,y){return NODES.find(n=>Math.hypot(n.x-x,n.y-y)<18);}
+function suitableResources(edge){const a=findNode(edge.a), b=findNode(edge.b); const list=new Set(); a.produces.forEach(r=>{if(b.demands.includes(r) || b.type==='city' && r==='passagers') list.add(r);}); b.produces.forEach(r=>{if(a.demands.includes(r) || a.type==='city' && r==='passagers') list.add(r);}); return [...list];}
+function buildEdge(a,b){if(a.name===b.name) return addLog('Même site impossible.'); if(edgeExists(a.name,b.name)) return addLog('Ligne déjà posée.'); const cost=Math.round(dist(a,b)/10)+25; if(state.cash<cost) return addLog('Capital insuffisant.'); state.cash-=cost; state.edges.push({id:`E${Date.now()}${Math.random()}`,a:a.name,b:b.name,cost}); addLog(`Ligne ${a.name} ↔ ${b.name} construite pour ${money(cost)}.`); refreshSelectors();}
+function removeEdge(a,b){const idx=state.edges.findIndex(e=>(e.a===a.name&&e.b===b.name)||(e.a===b.name&&e.b===a.name)); if(idx===-1) return addLog('Aucune voie ici.'); const [removed]=state.edges.splice(idx,1); state.trains=state.trains.filter(t=>t.edgeId!==removed.id); state.cash+=10; addLog(`Voie retirée entre ${a.name} et ${b.name}.`); refreshSelectors();}
+function spawnTrain(){const edge=state.edges.find(e=>e.id===routeSelect.value); const res=resourceSelect.value; if(!edge||!res) return addLog('Sélection incomplète.'); const options=suitableResources(edge); if(!options.includes(res)) return addLog('Cette marchandise ne convient pas à cette ligne.'); if(state.cash<120) return addLog('Capital insuffisant pour acheter un train.'); state.cash-=120; const a=findNode(edge.a), b=findNode(edge.b); const from = a.produces.includes(res) ? a : b.produces.includes(res) ? b : a; const to = from.name===a.name ? b : a; state.trains.push({id:`T${Date.now()}${Math.random()}`,edgeId:edge.id,resource:res,from:from.name,to:to.name,wagons:0,maxWagons:res==='passagers'?3:4,progress:0,state:'loading',timer:0,delivered:0,profit:0,speed:0.0011 + Math.random()*0.0004}); addLog(`Convoi affecté : ${RESOURCES[res].label} ${from.name} → ${to.name}.`);}
+function produceGoods(){NODES.forEach(n=>{n.produces.forEach(r=>{state.stocks[n.name][r]+= (r==='passagers'?2:1) + Math.floor(Math.random()*2); state.stocks[n.name][r]=Math.min(14,state.stocks[n.name][r]);});});}
+function revenueFor(train){const from=findNode(train.from), to=findNode(train.to), base=state.prices[train.resource], d=dist(from,to), quality=Math.max(.8,1.9-d/700), demandBonus=to.demands.includes(train.resource)?1.4:1.05; return Math.round(base * quality * demandBonus);}
+function reverseTrain(train){const tmp=train.from; train.from=train.to; train.to=tmp; train.progress=0; train.wagons=0; train.state='loading'; train.timer=0;}
+function updateTrains(){state.trains.forEach(train=>{const fromStock=state.stocks[train.from][train.resource]; if(train.state==='loading'){train.timer+=16; if(train.timer>380 && train.wagons<train.maxWagons && state.stocks[train.from][train.resource]>0){train.wagons++; state.stocks[train.from][train.resource]--; train.timer=0;} else if((train.wagons===train.maxWagons || (train.wagons>0 && state.stocks[train.from][train.resource]===0)) && train.wagons>0){train.state='moving'; train.timer=0;}}
+      else if(train.state==='moving'){train.progress += train.speed*16; if(train.progress>=1){train.progress=1; train.state='unloading'; train.timer=0;}}
+      else if(train.state==='unloading'){train.timer+=16; if(train.timer>330 && train.wagons>0){train.wagons--; train.timer=0; const gain=revenueFor(train); train.delivered += gain; train.profit += gain; if(findNode(train.to).demands.includes(train.resource) || train.resource==='passagers'){ } else { state.stocks[train.to][train.resource] = Math.min(14, state.stocks[train.to][train.resource] + 1);} } else if(train.wagons===0){reverseTrain(train);}}
+  });}
+function simulateMonth(){if(state.turn>state.maxTurns) return addLog('Partie terminée.'); produceGoods(); let revenue=0; state.trains.forEach(t=>{revenue += t.delivered; t.delivered=0;}); const upkeep = state.edges.length*6 + state.trains.length*8; const net = revenue - upkeep; state.cash += net; const m=state.turn; state.turn++; randPrices(); addLog(`Mois ${m}: recettes ${money(revenue)}, entretien ${money(upkeep)}, net ${money(net)}.`); if(state.turn>state.maxTurns) addLog(`Fin de partie : bénéfice ${money(state.cash-state.startCash)}.`);} 
+function refreshSelectors(){routeSelect.innerHTML = state.edges.length ? state.edges.map(e=>`<option value="${e.id}">${e.a} ↔ ${e.b}</option>`).join('') : '<option value="">Aucune ligne</option>'; updateResourceOptions();}
+function updateResourceOptions(){const edge=state.edges.find(e=>e.id===routeSelect.value) || state.edges[0]; if(!edge){resourceSelect.innerHTML='<option value="">Aucune ressource</option>'; return;} const opts=suitableResources(edge); resourceSelect.innerHTML=opts.length ? opts.map(r=>`<option value="${r}">${RESOURCES[r].label}</option>`).join('') : '<option value="">Aucune marchandise adaptée</option>';}
+function updateSidebar(){document.getElementById('cashValue').textContent=money(state.cash); document.getElementById('profitValue').textContent=money(state.cash-state.startCash); document.getElementById('turnValue').textContent=`${Math.min(state.turn,state.maxTurns)}/${state.maxTurns}`; document.getElementById('trainCount').textContent=state.trains.length; document.getElementById('selectedBadge').textContent=`Sélection : ${state.selectedNode?state.selectedNode.name:'aucune'}`; document.getElementById('networkBadge').textContent=`Voies : ${state.edges.length}`;
+  resourceList.innerHTML=Object.entries(RESOURCES).map(([k,v])=>`<div class="resource-row"><div><strong>${v.label}</strong><div class="mini">Base ${money(v.base)}</div></div><div class="${state.prices[k]>v.base?'good':'mini'}">${money(state.prices[k])}</div></div>`).join('');
+  stationList.innerHTML=NODES.slice(0,8).map(n=>{const visible=Object.entries(state.stocks[n.name]).filter(([,v])=>v>0).slice(0,3).map(([r,v])=>`${RESOURCES[r].label}:${v}`).join(' · ') || 'Aucun stock'; return `<div class="station-row"><div><strong>${n.name}</strong><div class="mini">${visible}</div></div><div>${n.type}</div></div>`;}).join('');
+  trainList.innerHTML=state.trains.length?state.trains.map(t=>`<div class="train-row"><div><strong>${RESOURCES[t.resource].label}</strong> ${t.from} → ${t.to}<div class="mini">${t.wagons}/${t.maxWagons} wagons · ${t.state} · profit cumulé ${money(t.profit)}</div></div><div>${money(t.delivered)}</div></div>`).join(''):`<div class="mini">Aucun convoi acheté.</div>`;
+}
+function drawBackground(){ctx.fillStyle='#244d31';ctx.fillRect(0,0,canvas.width,canvas.height);for(let i=0;i<180;i++){const x=(i*73)%canvas.width,y=(i*97)%canvas.height;ctx.fillStyle=i%7===0?'#315e3a':'#2a5635';ctx.fillRect(x,y,5,5)}ctx.fillStyle='#2a6a93';ctx.beginPath();ctx.moveTo(0,600);ctx.bezierCurveTo(160,520,220,620,380,560);ctx.bezierCurveTo(530,500,680,630,860,580);ctx.lineTo(1120,700);ctx.lineTo(0,700);ctx.closePath();ctx.fill();}
+function drawDepot(x,y,stockItems){ctx.fillStyle='#dcc9a1'; ctx.fillRect(x-18,y+14,36,14); ctx.strokeStyle='#4a351b'; ctx.strokeRect(x-18,y+14,36,14); stockItems.slice(0,4).forEach(([r,v],i)=>{ctx.fillStyle=RESOURCES[r].color; ctx.fillRect(x-15 + i*8, y+17, 6, Math.min(8,2+v));});}
+function drawNode(n){const colors={city:'#f0d37a',forest:'#6e4a24',coal:'#444',farm:'#c9a845',steel:'#9aa4ad',textile:'#b55f2a',port:'#87b4c7'}; const selected=state.selectedNode&&state.selectedNode.name===n.name; ctx.fillStyle=colors[n.type]||'#fff'; ctx.strokeStyle=selected?'#fff':'#20180e'; ctx.lineWidth=selected?4:2; if(n.type==='city'){ctx.fillRect(n.x-10,n.y-10,20,20);ctx.strokeRect(n.x-10,n.y-10,20,20);} else {ctx.beginPath(); ctx.arc(n.x,n.y,10,0,Math.PI*2); ctx.fill(); ctx.stroke();}
+  ctx.fillStyle='#f4ecd7'; ctx.font='12px Satoshi'; ctx.fillText(n.name,n.x+14,n.y+4);
+  const stocked=Object.entries(state.stocks[n.name]).filter(([,v])=>v>0); if(stocked.length) drawDepot(n.x,n.y,stocked);
+}
+function drawTracks(){state.edges.forEach(e=>{const a=findNode(e.a), b=findNode(e.b); ctx.strokeStyle='#dcc9a1'; ctx.lineWidth=6; ctx.beginPath(); ctx.moveTo(a.x,a.y); ctx.lineTo(b.x,b.y); ctx.stroke(); ctx.strokeStyle='#6d4f21'; ctx.lineWidth=1.5; ctx.beginPath(); ctx.moveTo(a.x,a.y); ctx.lineTo(b.x,b.y); ctx.stroke();});}
+function drawTrain(train){const from=findNode(train.from), to=findNode(train.to), p=train.progress; const x=from.x+(to.x-from.x)*p, y=from.y+(to.y-from.y)*p, angle=Math.atan2(to.y-from.y,to.x-from.x); ctx.save(); ctx.translate(x,y); ctx.rotate(angle); for(let i=0;i<train.wagons;i++){ctx.fillStyle=RESOURCES[train.resource].color; ctx.fillRect(-18 - i*11,-5,9,10); ctx.strokeStyle='#111'; ctx.strokeRect(-18 - i*11,-5,9,10);} ctx.fillStyle='#101010'; ctx.fillRect(-4,-7,16,14); ctx.fillStyle='#d3c08c'; ctx.fillRect(8,-5,4,10); ctx.strokeStyle='#eee0b7'; ctx.strokeRect(-4,-7,16,14); ctx.restore(); }
+function render(){drawBackground(); drawTracks(); NODES.forEach(drawNode); state.trains.forEach(drawTrain); updateSidebar();}
+function animate(){updateTrains(); render(); requestAnimationFrame(animate);} 
+canvas.addEventListener('click',e=>{const r=canvas.getBoundingClientRect(),x=(e.clientX-r.left)*canvas.width/r.width,y=(e.clientY-r.top)*canvas.height/r.height,node=getNodeAt(x,y); if(!node) return; if(!state.selectedNode){state.selectedNode=node; addLog(`${node.name} sélectionné.`);} else {if(state.tool==='rail') buildEdge(state.selectedNode,node); else removeEdge(state.selectedNode,node); state.selectedNode=null;} render();});
+Array.from(document.querySelectorAll('[data-tool]')).forEach(btn=>btn.addEventListener('click',()=>{Array.from(document.querySelectorAll('[data-tool]')).forEach(b=>b.classList.remove('active')); btn.classList.add('active'); state.tool=btn.dataset.tool; document.getElementById('toolStatus').textContent=`Outil actif : ${state.tool==='rail'?'poser voie':'démolir'}.`; }));
+routeSelect.addEventListener('change',updateResourceOptions); document.getElementById('buyTrainBtn').addEventListener('click',()=>{spawnTrain(); render();}); document.getElementById('advanceBtn').addEventListener('click',()=>{simulateMonth(); render();}); document.getElementById('restartBtn').addEventListener('click',()=>location.reload()); document.getElementById('themeBtn').addEventListener('click',()=>{const root=document.documentElement; root.setAttribute('data-theme',root.getAttribute('data-theme')==='dark'?'light':'dark');});
+randPrices(); initStocks(); refreshSelectors(); addLog('Astuce : relie une production à une ville ou une industrie, puis achète un convoi dédié.'); requestAnimationFrame(animate);
+</script>
+</body>
+</html>
