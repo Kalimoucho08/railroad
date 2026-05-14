@@ -104,7 +104,7 @@ RailBaron.Trains = {
       return;
     }
 
-    train.timer += C.TICK_MS;
+    train.timer += C.TICK_MS * Math.max(1, gs.speed);
 
     // Decharger d'abord les wagons non desires par cette gare (vendus au prochain stop)
     // → le dechargement se fait dans _stepUnloading a l'arrivee
@@ -174,7 +174,7 @@ RailBaron.Trains = {
       return;
     }
 
-    train.timer += C.TICK_MS;
+    train.timer += C.TICK_MS * Math.max(1, gs.speed);
 
     // Decharger les wagons acceptes par cette gare
     for (const [r, loaded] of Object.entries(train.wagonsLoaded)) {
