@@ -102,6 +102,20 @@ RailBaron.Renderer = {
     if (stocked.length) {
       this._drawDepot(n.x, n.y, stocked, ctx);
     }
+
+    // Stocks dynamiques en texte sous le noeud
+    if (stocked.length) {
+      ctx.font = '9px Satoshi, Arial, sans-serif';
+      ctx.fillStyle = '#fff';
+      ctx.textBaseline = 'top';
+      const topN = stocked.slice(0, 4);
+      for (let i = 0; i < topN.length; i++) {
+        const [r, v] = topN[i];
+        const cargoDef = (RailBaron.CONFIG.CARGO[r] || RailBaron.CONFIG.RESOURCES[r] || {});
+        const shortLabel = (cargoDef.label || r).substring(0, 3);
+        ctx.fillText(`${shortLabel}:${v}`, n.x + 15, n.y + 18 + i * 11);
+      }
+    }
   },
 
   _drawDepot(x, y, stockItems, ctx) {
@@ -144,10 +158,18 @@ RailBaron.Renderer = {
     ctx.restore();
   },
 
-  // --- Hit testing (coords monde) ---
+  // --- Hit testing (coords monde) — inclut la zone du texte ---
   getNodeAt(wx, wy) {
     const R = RailBaron.CONFIG.NODE_HIT_RADIUS;
-    return RailBaron.CONFIG.NODES.find(n => Math.hypot(n.x - wx, n.y - wy) < R) || null;
+    return RailBaron.CONFIG.NODES.find(n => {
+      // Cercle autour de l'icone
+      if (Math.hypot(n.x - wx, n.y - wy) < R) return true;
+      // Rectangle du texte (nom a droite de l'icone)
+      const textW = n.name.length * 7.5 + 4;
+      const textH = 14;
+      const tx = n.x + 13, ty = n.y - textH / 2;
+      return wx >= tx && wx <= tx + textW && wy >= ty && wy <= ty + textH;
+    }) || null;
   },
 
   getTrainAt(wx, wy, gs) {

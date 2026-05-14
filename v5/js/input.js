@@ -41,20 +41,17 @@ RailBaron.Input = {
     const pos = this.canvasPos(e);
     const world = this.camera.screenToWorld(pos.x, pos.y);
 
-    // Verifier si on clique sur un train (pour fiche detail)
-    const hitTrain = this.renderer.getTrainAt(world.x, world.y, this.gs);
-    if (hitTrain && e.button === 0) {
-      if (RailBaron.Overlays) RailBaron.Overlays.showTrainDetail(hitTrain, this.gs, this.camera, this.canvas);
+    // Priorite au noeud (sinon les trains bloquent le clic sur les gares)
+    const hitNode = this.renderer.getNodeAt(world.x, world.y);
+    if (hitNode && e.button === 0) {
+      // Le clic jeu est gere par ui.js, on laisse passer
       return;
     }
 
-    // Verifier si on clique sur un noeud
-    const hitNode = this.renderer.getNodeAt(world.x, world.y);
-    if (hitNode) {
-      if (e.button === 0 && this.gs.tool === 'select') {
-        // Tooltip longue au clic sur un noeud en mode select
-        if (RailBaron.Overlays) RailBaron.Overlays.showNodeDetail(hitNode, this.gs);
-      }
+    // Sinon, clic sur un train → fiche detail
+    const hitTrain = this.renderer.getTrainAt(world.x, world.y, this.gs);
+    if (hitTrain && e.button === 0) {
+      if (RailBaron.Overlays) RailBaron.Overlays.showTrainDetail(hitTrain, this.gs, this.camera, this.canvas);
       return;
     }
 
