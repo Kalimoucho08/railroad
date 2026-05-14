@@ -62,7 +62,7 @@ RailBaron.Trains = {
 
       switch (train.state) {
         case 'loading':   this._stepLoading(train, route, gs);   break;
-        case 'moving':    this._stepMoving(train, route);         break;
+        case 'moving':    this._stepMoving(train, route, gs);    break;
         case 'unloading': this._stepUnloading(train, route, gs); break;
       }
     }
@@ -118,7 +118,7 @@ RailBaron.Trains = {
   },
 
   // === MOVING ===
-  _stepMoving(train, route) {
+  _stepMoving(train, route, gs) {
     const C = RailBaron.CONFIG;
     const curNode = this._currentNode(train, route);
     if (!curNode || train.currentStopIndex >= route.fullPath.length) {
@@ -129,7 +129,9 @@ RailBaron.Trains = {
     if (!nextNode) { train.state = 'loading'; return; }
     const dist = RailBaron.dist(curNode, nextNode);
 
-    const segmentTime = dist / (train.speed * 1000);
+    // Vitesse du train (pixels/ms) × facteur jeu. 100 = echelle visuelle
+    const speedMul = (gs && gs.speed) || 1;
+    const segmentTime = dist / (train.speed * 80 * speedMul);
     if (segmentTime <= 0) { train.progress = 1; }
     else { train.progress += C.TICK_MS / segmentTime; }
 
