@@ -68,13 +68,13 @@ RailBaron.Renderer = {
       else color = '#c4704a';                   // rouge
 
       ctx.strokeStyle = color;
-      ctx.lineWidth = 6;
+      ctx.lineWidth = 8;
       ctx.beginPath();
       ctx.moveTo(a.x, a.y);
       ctx.lineTo(b.x, b.y);
       ctx.stroke();
-      ctx.strokeStyle = '#6d4f21';
-      ctx.lineWidth = 1.5;
+      ctx.strokeStyle = '#4a351b';
+      ctx.lineWidth = 2;
       ctx.beginPath();
       ctx.moveTo(a.x, a.y);
       ctx.lineTo(b.x, b.y);
@@ -206,12 +206,13 @@ RailBaron.Renderer = {
     ctx.restore();
   },
 
-  // Dessiner les routes (lignes colorees)
+  // Dessiner les routes (trait fin pointille par-dessus les voies)
   _drawRoutes(gs, ctx) {
     for (const route of gs.routes) {
       ctx.strokeStyle = route.color || '#dcc9a1';
-      ctx.lineWidth = 4;
+      ctx.lineWidth = 2;
       ctx.lineCap = 'round';
+      ctx.setLineDash([6, 8]);
       ctx.beginPath();
       const first = gs.getNode(route.fullPath[0]);
       ctx.moveTo(first.x, first.y);
@@ -221,6 +222,7 @@ RailBaron.Renderer = {
       }
       ctx.stroke();
     }
+    ctx.setLineDash([]);
   },
 
   // --- Hit testing (coords monde) — inclut la zone du texte ---
