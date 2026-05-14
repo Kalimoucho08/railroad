@@ -218,6 +218,24 @@ RailBaron.UI = {
       agingBtn.textContent = 'Vieillissement: ' + (on ? 'ON' : 'OFF');
       this.gs.addLog('Vieillissement ' + (on ? 'active' : 'desactive') + '.');
     });
+    // Export JSON
+    const exportBtn = document.getElementById('exportBtn');
+    if (exportBtn) exportBtn.addEventListener('click', () => RailBaron.IO.exportJSON(this.gs));
+    // Import JSON
+    const importBtn = document.getElementById('importBtn');
+    const importFile = document.getElementById('importFile');
+    if (importBtn && importFile) {
+      importBtn.addEventListener('click', () => importFile.click());
+      importFile.addEventListener('change', () => {
+        if (importFile.files[0]) RailBaron.IO.importJSON(this.gs, importFile.files[0]);
+      });
+    }
+    // Effacer sauvegarde
+    const deleteBtn = document.getElementById('deleteSaveBtn');
+    if (deleteBtn) deleteBtn.addEventListener('click', () => {
+      RailBaron.IO.deleteSave();
+      this.gs.addLog('Sauvegarde locale effacee.');
+    });
   },
 
   _wireSpeed() {

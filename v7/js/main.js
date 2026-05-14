@@ -17,10 +17,15 @@ RailBaron.Main = {
     RailBaron.Input.init(this.gs, this.camera, canvas, RailBaron.Renderer);
     RailBaron.UI.init(this.gs, RailBaron.Renderer, this.camera);
 
-    this.gs.addLog('Compagnie creee. Capital : ' + RailBaron.money(RailBaron.CONFIG.STARTING_CAPITAL) + '.');
-    this.gs.addLog('Relie producteurs, industries et villes. Achete des convois dedies.');
-    this.gs.addLog('Construis des stations (Depot/Gare/Terminal) pour capter les flux.');
-    this.gs.addLog('Molette = zoom. Glisser = deplacer. Clic train = fiche.');
+    // Tenter de charger une sauvegarde
+    if (RailBaron.IO.hasSave()) {
+      RailBaron.IO.load(this.gs);
+      this.gs.addLog('Sauvegarde locale restauree. Bon jeu !');
+    } else {
+      this.gs.addLog('Compagnie creee. Capital : ' + RailBaron.money(RailBaron.CONFIG.STARTING_CAPITAL) + '.');
+      this.gs.addLog('Relie producteurs, industries et villes. Achete des convois dedies.');
+      this.gs.addLog('Molette = zoom. Glisser = deplacer. Clic train = fiche.');
+    }
 
     this._lastTimestamp = 0;
     this.loop(0);

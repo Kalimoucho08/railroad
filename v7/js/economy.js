@@ -229,6 +229,7 @@ RailBaron.Economy = {
     gs.cash += net;
     gs.turn++;
     gs._monthsInPeriod++;
+    RailBaron.IO.save(gs);  // auto-save chaque mois
 
     gs.addLog(`${String(month).padStart(2,'0')}/${year} : +${RailBaron.money(totalRevenue)} rec, -${RailBaron.money(upkeep)} ent, -${RailBaron.money(interest)} int = ${RailBaron.money(net)}`);
 
