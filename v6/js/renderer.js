@@ -16,6 +16,7 @@ RailBaron.Renderer = {
     camera.apply(ctx);
     this._drawBackground(ctx);
     this._drawTracks(gs, ctx);
+    this._drawRoutes(gs, ctx);
     for (const node of RailBaron.CONFIG.NODES) {
       this._drawNode(node, gs, ctx);
     }
@@ -130,25 +131,40 @@ RailBaron.Renderer = {
   },
 
   _drawTrain(train, gs, ctx) {
-    const from = gs.getNode(train.from);
-    const to = gs.getNode(train.to);
+    const route = gs.routes.find(r => r.id === train.routeId);
+    if (!route) return;
+    const curNode = gs.getNode(route.stops[train.currentStopIndex]);
+    const dir = train.direction;
+    const nextIdx = train.currentStopIndex + dir;
+    if (nextIdx < 0 || nextIdx >= route.stops.length) return;
+    const nextNode = gs.getNode(route.stops[nextIdx]);
+
     const p = train.progress;
-    const x = from.x + (to.x - from.x) * p;
-    const y = from.y + (to.y - from.y) * p;
-    const angle = Math.atan2(to.y - from.y, to.x - from.x);
+    const x = curNode.x + (nextNode.x - curNode.x) * p;
+    const y = curNode.y + (nextNode.y - curNode.y) * p;
+    const angle = Math.atan2(nextNode.y - curNode.y, nextNode.x - curNode.x);
 
     ctx.save();
     ctx.translate(x, y);
     ctx.rotate(angle);
 
-    for (let i = 0; i < train.wagons; i++) {
-      const cargoDef = RailBaron.CONFIG.CARGO[train.resource] || RailBaron.CONFIG.RESOURCES[train.resource] || {};
-      ctx.fillStyle = cargoDef.color || '#888';
-      ctx.fillRect(-18 - i * 11, -5, 9, 10);
-      ctx.strokeStyle = '#111';
-      ctx.strokeRect(-18 - i * 11, -5, 9, 10);
+    // Wagons multicolores (dans l'ordre du consist)
+    let wOffset = 0;
+    const C = RailBaron.CONFIG;
+    for (const [r, maxW] of Object.entries(train.consist)) {
+      const cargoDef = C.CARGO[r] || {};
+      const loaded = train.wagonsLoaded[r] || 0;
+      for (let i = 0; i < maxW; i++) {
+        // Wagon vide = couleur terne, plein = couleur vive
+        ctx.fillStyle = i < loaded ? (cargoDef.color || '#888') : '#555';
+        ctx.fillRect(-18 - wOffset * 11, -5, 9, 10);
+        ctx.strokeStyle = '#111';
+        ctx.strokeRect(-18 - wOffset * 11, -5, 9, 10);
+        wOffset++;
+      }
     }
 
+    // Locomotive
     ctx.fillStyle = '#101010';
     ctx.fillRect(-4, -7, 16, 14);
     ctx.fillStyle = '#d3c08c';
@@ -156,6 +172,23 @@ RailBaron.Renderer = {
     ctx.strokeStyle = '#eee0b7';
     ctx.strokeRect(-4, -7, 16, 14);
     ctx.restore();
+  },
+
+  // Dessiner les routes (lignes colorees)
+  _drawRoutes(gs, ctx) {
+    for (const route of gs.routes) {
+      ctx.strokeStyle = route.color || '#dcc9a1';
+      ctx.lineWidth = 4;
+      ctx.lineCap = 'round';
+      ctx.beginPath();
+      const first = gs.getNode(route.stops[0]);
+      ctx.moveTo(first.x, first.y);
+      for (let i = 1; i < route.stops.length; i++) {
+        const n = gs.getNode(route.stops[i]);
+        ctx.lineTo(n.x, n.y);
+      }
+      ctx.stroke();
+    }
   },
 
   // --- Hit testing (coords monde) — inclut la zone du texte ---

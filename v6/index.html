@@ -81,13 +81,27 @@
         </div>
       </section>
 
-      <!-- Affectation convoi -->
+      <!-- Routes -->
       <section class="sb-section">
-        <div class="sb-section-hd" data-accordion="assign">Affecter convoi</div>
-        <div class="sb-section-bd" id="acc-assign">
+        <div class="sb-section-hd open" data-accordion="routes">Routes</div>
+        <div class="sb-section-bd" id="acc-routes">
+          <div class="mini" id="routeBuilderInfo">Cliquez des gares pour creer une route.</div>
+          <div style="display:flex;gap:4px;margin-bottom:4px">
+            <button class="btn" id="startRouteBtn">+ Nouvelle route</button>
+            <button class="btn" id="cancelRouteBtn" style="display:none">Annuler</button>
+          </div>
+          <div class="st-list" id="routeList"></div>
+        </div>
+      </section>
+
+      <!-- Convois -->
+      <section class="sb-section">
+        <div class="sb-section-hd open" data-accordion="convois">Nouveau convoi</div>
+        <div class="sb-section-bd" id="acc-convois">
           <select class="select" id="routeSelect"></select>
-          <select class="select" id="resourceSelect"></select>
-          <button class="btn primary" id="buyTrainBtn">Acheter train (120$)</button>
+          <div id="consistBuilder"></div>
+          <div id="consistSummary" class="mini" style="margin:4px 0"></div>
+          <button class="btn primary" id="buyTrainBtn">Acheter train</button>
         </div>
       </section>
 
@@ -156,6 +170,7 @@
 <script src="js/game-state.js"></script>
 <script src="js/economy.js"></script>
 <script src="js/tracks.js"></script>
+<script src="js/routes.js"></script>
 <script src="js/trains.js"></script>
 <script src="js/renderer.js"></script>
 <script src="js/overlays.js"></script>

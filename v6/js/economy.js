@@ -137,9 +137,10 @@ RailBaron.Economy = {
       total += st.size === 'depot' ? 200 : st.size === 'station' ? 400 : 800;
     }
     for (const train of gs.trains) {
-      if (train.status === 'paused') continue;  // aucun cout
+      if (train.status === 'paused') continue;
       const mul = train.status === 'on_demand' ? 0.5 : 1.0;
-      total += Math.round((C.TRAIN_UPKEEP_BASE + train.maxWagons * C.TRAIN_UPKEEP_PER_WAGON) * mul);
+      const wc = train.consist ? Object.values(train.consist).reduce((a, b) => a + b, 0) : 4;
+      total += Math.round((C.TRAIN_UPKEEP_BASE + wc * C.TRAIN_UPKEEP_PER_WAGON) * mul);
     }
     return total;
   },

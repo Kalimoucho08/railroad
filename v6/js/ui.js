@@ -5,6 +5,7 @@ RailBaron.UI = {
     this.renderer = renderer;
     this.camera = camera;
     this._pinned = true;
+    this._buildingRoute = false;
 
     this._cacheDom();
     this._wireSidebar();
@@ -13,7 +14,8 @@ RailBaron.UI = {
     this._wireTools();
     this._wireCanvas();
     this._wireButtons();
-    this._wireSelectors();
+    this._wireRouteBuilder();
+    this._wireConsistBuilder();
     this._wireLogToggle();
     this._wireVisibility();
     this.refreshSelectors();
@@ -33,6 +35,10 @@ RailBaron.UI = {
       resourceList:   q('#resourceList'),
       stationList:    q('#stationList'),
       trainList:      q('#trainList'),
+      routeList:      q('#routeList'),
+      routeBuilderInfo: q('#routeBuilderInfo'),
+      consistBuilder:  q('#consistBuilder'),
+      consistSummary:  q('#consistSummary'),
       logBox:         q('#logBox'),
       logBar:         q('#logBar'),
       selectedBadge:      q('#selectedBadge'),
@@ -102,17 +108,20 @@ RailBaron.UI = {
   _wireCanvas() {
     const canvas = this.el.canvas;
     canvas.addEventListener('click', (e) => {
-      // Ignorer si on vient de finir un drag (pan)
-      if (RailBaron.Input._dragMoved) {
-        RailBaron.Input._dragMoved = false;
-        return;
-      }
+      if (RailBaron.Input._dragMoved) { RailBaron.Input._dragMoved = false; return; }
 
       const pos = RailBaron.Input.canvasPos(e);
       const world = this.camera.screenToWorld(pos.x, pos.y);
       const node = this.renderer.getNodeAt(world.x, world.y);
       if (!node) return;
 
+      // Mode construction de route
+      if (this._buildingRoute) {
+        this._addStopToRoute(node);
+        return;
+      }
+
+      // Mode normal : construction/demolition voie
       if (!this.gs.selectedNode) {
         this.gs.selectedNode = node;
         this.gs.addLog(`${node.name} selectionne.`);
@@ -181,13 +190,118 @@ RailBaron.UI = {
     });
   },
 
-  _wireSelectors() {
-    this.el.routeSelect.addEventListener('change', () => this.updateResourceOptions());
+  // --- Route builder ---
+  _wireRouteBuilder() {
+    document.getElementById('startRouteBtn').addEventListener('click', () => {
+      this._buildingRoute = true;
+      this.gs._buildingRoute = [];
+      document.getElementById('startRouteBtn').style.display = 'none';
+      document.getElementById('cancelRouteBtn').style.display = '';
+      this.el.routeBuilderInfo.textContent = 'Cliquez les gares dans l\'ordre. Puis validez.';
+      this.updateSidebar();
+    });
+    document.getElementById('cancelRouteBtn').addEventListener('click', () => {
+      this._cancelRouteBuild();
+    });
+  },
+
+  _addStopToRoute(node) {
+    const stops = this.gs._buildingRoute || [];
+    if (stops.length > 0 && stops[stops.length - 1] === node.name) {
+      // Double-clic sur le meme noeud = valider
+      this._finishRoute();
+      return;
+    }
+    stops.push(node.name);
+    this.gs._buildingRoute = stops;
+    this.el.routeBuilderInfo.textContent = 'Arrets : ' + stops.join(' → ') + ' (re-cliquez le dernier pour valider)';
+    this.updateSidebar();
+  },
+
+  _finishRoute() {
+    const stops = this.gs._buildingRoute;
+    if (stops && stops.length >= 2) {
+      RailBaron.Routes.create(this.gs, stops);
+    }
+    this._cancelRouteBuild();
+  },
+
+  _cancelRouteBuild() {
+    this._buildingRoute = false;
+    this.gs._buildingRoute = null;
+    document.getElementById('startRouteBtn').style.display = '';
+    document.getElementById('cancelRouteBtn').style.display = 'none';
+    this.el.routeBuilderInfo.textContent = 'Cliquez des gares pour creer une route.';
+    this.refreshSelectors();
+    this.updateSidebar();
+  },
+
+  // --- Consist builder ---
+  _wireConsistBuilder() {
     document.getElementById('buyTrainBtn').addEventListener('click', () => {
-      RailBaron.Trains.spawn(this.gs, this.el.routeSelect.value, this.el.resourceSelect.value);
+      const routeId = this.el.routeSelect.value;
+      if (!routeId) { this.gs.addLog('Selectionnez une route.'); return; }
+      const consist = this._readConsist();
+      if (Object.keys(consist).length === 0) { this.gs.addLog('Ajoutez au moins un wagon.'); return; }
+      const route = this.gs.routes.find(r => r.id === routeId);
+      const stopsAt = route ? route.stops.map(() => true) : null;
+      RailBaron.Trains.spawn(this.gs, routeId, consist, stopsAt);
       this.refreshSelectors();
       this.updateSidebar();
     });
+    this.el.routeSelect.addEventListener('change', () => this._renderConsistBuilder());
+  },
+
+  _renderConsistBuilder() {
+    const routeId = this.el.routeSelect.value;
+    const route = this.gs.routes.find(r => r.id === routeId);
+    if (!route) { this.el.consistBuilder.innerHTML = '<div class="mini">Selectionnez une route.</div>'; return; }
+
+    const cargoes = RailBaron.Routes.getSuitableCargo(route, this.gs);
+    if (!cargoes.length) { this.el.consistBuilder.innerHTML = '<div class="mini">Aucune marchandise adaptee.</div>'; return; }
+
+    const C = RailBaron.CONFIG;
+    this._consistData = this._consistData || {};
+    let html = '';
+    for (const c of cargoes) {
+      const def = C.CARGO[c] || {};
+      const qty = this._consistData[c] || 0;
+      html += `<div class="consist-row">
+        <span style="display:inline-block;width:10px;height:10px;background:${def.color || '#888'};margin-right:4px"></span>
+        <span style="flex:1">${def.label || c}</span>
+        <button class="tb-act" data-adj="-1" data-cargo="${c}">-</button>
+        <span style="min-width:20px;text-align:center">${qty}</span>
+        <button class="tb-act" data-adj="1" data-cargo="${c}">+</button>
+      </div>`;
+    }
+    this.el.consistBuilder.innerHTML = html;
+    this._updateConsistSummary();
+
+    // Wirer les +/-
+    this.el.consistBuilder.querySelectorAll('.tb-act').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const c = btn.dataset.cargo;
+        const adj = parseInt(btn.dataset.adj);
+        this._consistData[c] = Math.max(0, (this._consistData[c] || 0) + adj);
+        this._renderConsistBuilder();
+      });
+    });
+  },
+
+  _readConsist() {
+    const data = {};
+    for (const [k, v] of Object.entries(this._consistData || {})) {
+      if (v > 0) data[k] = v;
+    }
+    return data;
+  },
+
+  _updateConsistSummary() {
+    const data = this._readConsist();
+    const total = Object.values(data).reduce((a, b) => a + b, 0);
+    const C = RailBaron.CONFIG;
+    const cost = total ? C.TRAIN_COST + total * C.WAGON_COST : 0;
+    this.el.consistSummary.textContent = total ? `${total} wagons — Cout : ${RailBaron.money(cost)}` : '';
   },
 
   // --- Log toggle ---
@@ -278,14 +392,18 @@ RailBaron.UI = {
       return;
     }
     this.el.trainList.innerHTML = gs.trains.map(t => {
-      const lbl = (RailBaron.CONFIG.CARGO[t.resource] || RailBaron.CONFIG.RESOURCES[t.resource] || {}).label || t.resource;
+      const consistList = Object.entries(t.consist).map(([r, n]) => `${n}x${(RailBaron.CONFIG.CARGO[r] || {}).label || r}`).join(', ');
+      const loadedList = Object.entries(t.wagonsLoaded).filter(([,v]) => v > 0).map(([r, v]) => `${v}x${(RailBaron.CONFIG.CARGO[r] || {}).label || r}`).join(', ') || 'vide';
+      const route = gs.routes.find(r => r.id === t.routeId);
+      const routeName = route ? route.name : '?';
       const stLabels = { active: '', paused: 'PAUSE', on_demand: 'DEM.' };
       const st = stLabels[t.status] || '';
+      const curStop = route ? route.stops[t.currentStopIndex] : '?';
       return `<div class="tr-row" data-train="${t.id}">
         <div>
-          <strong>${t.id}</strong> ${lbl} ${st}
-          <div class="mini">${t.from} → ${t.to} | ${t.wagons}/${t.maxWagons} wag. | ${t.state}</div>
-          <div class="mini">Vie: ${RailBaron.money(t.lifetimeProfit)} | Mois: ${RailBaron.money(t.monthlyRevenue)}</div>
+          <strong>${t.id}</strong> ${st} <span class="mini">${routeName}</span>
+          <div class="mini">Consist: ${consistList} | Chargé: ${loadedList}</div>
+          <div class="mini">À ${curStop} · ${t.state} · Vie: ${RailBaron.money(t.lifetimeProfit)} | Mois: ${RailBaron.money(t.monthlyRevenue)}</div>
           <div class="train-actions">
             ${t.status !== 'active' ? `<button class="tb-act" data-act="active" data-tid="${t.id}">▶</button>` : `<button class="tb-act" data-act="paused" data-tid="${t.id}">⏸</button>`}
             <button class="tb-act" data-act="on_demand" data-tid="${t.id}">⏳</button>
@@ -295,7 +413,6 @@ RailBaron.UI = {
       </div>`;
     }).join('');
 
-    // Wirer les boutons d'action
     this.el.trainList.querySelectorAll('.tb-act').forEach(btn => {
       btn.addEventListener('click', (e) => {
         e.stopPropagation();
@@ -319,22 +436,35 @@ RailBaron.UI = {
   // --- Selectors ---
   refreshSelectors() {
     const gs = this.gs;
-    this.el.routeSelect.innerHTML = gs.edges.length
-      ? gs.edges.map(e => `<option value="${e.id}">${e.a} ↔ ${e.b}</option>`).join('')
-      : '<option value="">Aucune ligne</option>';
-    this.updateResourceOptions();
+    this.el.routeSelect.innerHTML = gs.routes.length
+      ? gs.routes.map(r => `<option value="${r.id}">${r.name}</option>`).join('')
+      : '<option value="">Aucune route</option>';
+    this._renderConsistBuilder();
+    this._renderRouteList();
   },
 
-  updateResourceOptions() {
+  // --- Liste des routes ---
+  _renderRouteList() {
     const gs = this.gs;
-    const edge = gs.getEdgeById(this.el.routeSelect.value) || gs.edges[0];
-    if (!edge) {
-      this.el.resourceSelect.innerHTML = '<option value="">Aucune ressource</option>';
+    if (!gs.routes.length) {
+      this.el.routeList.innerHTML = '<div class="mini">Aucune route. Construisez des voies puis creez une route.</div>';
       return;
     }
-    const opts = RailBaron.Tracks.getSuitableResources(edge, gs);
-    this.el.resourceSelect.innerHTML = opts.length
-      ? opts.map(r => `<option value="${r}">${(RailBaron.CONFIG.CARGO[r] || RailBaron.CONFIG.RESOURCES[r] || {}).label || r}</option>`).join('')
-      : '<option value="">Aucune marchandise adaptee</option>';
-  }
+    this.el.routeList.innerHTML = gs.routes.map(r => {
+      const trainCount = gs.trains.filter(t => t.routeId === r.id).length;
+      return `<div class="st-row">
+        <div><strong>${r.name}</strong><div class="mini">${r.stops.length} arrets · ${trainCount} train(s)</div></div>
+        <button class="tb-act tb-sell" data-delroute="${r.id}">✕</button>
+      </div>`;
+    }).join('');
+    // Wirer delete
+    this.el.routeList.querySelectorAll('[data-delroute]').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        RailBaron.Routes.remove(this.gs, btn.dataset.delroute);
+        this.refreshSelectors();
+        this.updateSidebar();
+      });
+    });
+  },
 };

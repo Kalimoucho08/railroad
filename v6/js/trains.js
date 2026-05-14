@@ -1,40 +1,41 @@
-/* trains.js — V5.5 : statuts (active/paused/on_demand), vente, visibilite */
+/* trains.js — V6 : routes multi-arrets, consist multi-ressources */
 RailBaron.Trains = {
 
-  spawn(gs, edgeId, resource) {
-    const edge = gs.getEdgeById(edgeId);
-    if (!edge || !resource) { gs.addLog('Selection incomplete.'); return null; }
-    const suitable = RailBaron.Tracks.getSuitableResources(edge, gs);
-    if (!suitable.includes(resource)) { gs.addLog('Cette marchandise ne convient pas a cette ligne.'); return null; }
+  // --- Achat ---
+  spawn(gs, routeId, consist, stopsAt) {
+    const route = gs.routes.find(r => r.id === routeId);
+    if (!route) { gs.addLog('Route introuvable.'); return null; }
+    if (!consist || Object.keys(consist).length === 0) { gs.addLog('Le consist est vide.'); return null; }
     const C = RailBaron.CONFIG;
-    if (gs.cash < C.TRAIN_COST) { gs.addLog(`Capital insuffisant (cout train : ${RailBaron.money(C.TRAIN_COST)}).`); return null; }
+    const totalWagons = Object.values(consist).reduce((a, b) => a + b, 0);
+    const cost = C.TRAIN_COST + totalWagons * C.WAGON_COST;
+    if (gs.cash < cost) { gs.addLog(`Capital insuffisant (cout : ${RailBaron.money(cost)}).`); return null; }
 
-    const a = gs.getNode(edge.a);
-    const b = gs.getNode(edge.b);
-    const aProd = RailBaron.Tracks._getProducesList(a);
-    const bProd = RailBaron.Tracks._getProducesList(b);
-    const from = aProd.includes(resource) ? a : bProd.includes(resource) ? b : a;
-    const to = from.name === a.name ? b : a;
-
-    const cargoDef = C.CARGO[resource];
-    const maxW = resource === 'passengers' ? C.PASSENGER_MAX_WAGONS : C.MAX_WAGONS;
-
-    gs.cash -= C.TRAIN_COST;
+    gs.cash -= cost;
     const train = {
-      id: gs.nextTrainId(), edgeId: edge.id, resource,
-      cargoLabel: cargoDef ? cargoDef.label : resource,
-      from: from.name, to: to.name,
-      wagons: 0, maxWagons: maxW,
+      id: gs.nextTrainId(),
+      routeId: route.id,
+      consist: { ...consist },           // { coal: 2, mail: 1 }
+      stopsAt: stopsAt || route.stops.map(() => true),
+      wagonsLoaded: {},                  // { coal: 0, mail: 0 }
+      currentStopIndex: 0,
+      direction: 1,
+      state: 'loading',                  // loading | moving | unloading
+      progress: 0,                       // 0→1 entre current et next stop
+      timer: 0,
       trainType: 'limited',
-      status: 'active',       // 'active' | 'paused' | 'on_demand'
-      waitFull: false,
-      progress: 0, state: 'loading', timer: 0,
+      status: 'active',                  // active | paused | on_demand
       speed: C.BASE_SPEED + Math.random() * C.SPEED_VARIANCE,
-      monthlyRevenue: 0, lifetimeProfit: 0,
+      monthlyRevenue: 0,
+      lifetimeProfit: 0,
       deliveriesThisMonth: 0
     };
+    // Init wagonsLoaded a 0 pour chaque type
+    for (const r of Object.keys(train.consist)) train.wagonsLoaded[r] = 0;
     gs.trains.push(train);
-    gs.addLog(`Convoi ${cargoDef ? cargoDef.label : resource} ${from.name} → ${to.name} (${RailBaron.money(C.TRAIN_COST)}).`);
+
+    const cargoList = Object.entries(consist).map(([r, n]) => `${n}x${(C.CARGO[r] || {}).label || r}`).join(', ');
+    gs.addLog(`Convoi ${train.id} : ${cargoList} sur ${route.name} (${RailBaron.money(cost)}).`);
     return train;
   },
 
@@ -50,88 +51,154 @@ RailBaron.Trains = {
     return true;
   },
 
-  // --- Changement de statut ---
+  // --- Statut ---
   setTrainStatus(gs, trainId, status) {
     const train = gs.trains.find(t => t.id === trainId);
     if (!train) return false;
     const labels = { active: 'Actif', paused: 'En pause', on_demand: 'A la demande' };
     train.status = status;
-    if (status === 'paused') {
-      train.state = 'loading';
-      train.timer = 0;
-    }
+    if (status === 'paused') { train.state = 'loading'; train.timer = 0; }
     gs.addLog(`Train ${trainId} : ${labels[status] || status}.`);
     return true;
   },
 
-  // --- Boucle de mise a jour ---
+  // --- Boucle principale ---
   update(gs) {
     for (const train of gs.trains) {
-      if (train.status === 'paused') continue;  // immobilise
+      if (train.status === 'paused') continue;
+      const route = gs.routes.find(r => r.id === train.routeId);
+      if (!route) continue;
+
       switch (train.state) {
-        case 'loading':   this._stepLoading(train, gs);   break;
-        case 'moving':    this._stepMoving(train);         break;
-        case 'unloading': this._stepUnloading(train, gs);  break;
-        case 'returning': this._stepReturning(train);      break;
+        case 'loading':   this._stepLoading(train, route, gs);   break;
+        case 'moving':    this._stepMoving(train, route);          break;
+        case 'unloading': this._stepUnloading(train, route, gs);  break;
       }
     }
   },
 
-  _stepLoading(train, gs) {
-    const C = RailBaron.CONFIG;
-    train.timer += C.TICK_MS;
-    const stock = gs.stocks[train.from][train.resource] || 0;
-
-    if (train.timer > C.LOAD_TIME && train.wagons < train.maxWagons && stock > 0) {
-      train.wagons++;
-      gs.stocks[train.from][train.resource]--;
-      train.timer = 0;
-    }
-
-    const shouldDepart = train.wagons === train.maxWagons ||
-      (train.wagons > 0 && stock === 0) ||
-      (train.wagons > 0 && train.status === 'on_demand');  // on_demand : part des qu'il a quelque chose
-
-    if (shouldDepart && train.wagons > 0) {
-      train.state = 'moving';
-      train.timer = 0;
-    }
+  // --- Helpers ---
+  _currentNode(train, route) {
+    return RailBaron.findNode(route.stops[train.currentStopIndex]);
   },
 
-  _stepMoving(train) {
-    const C = RailBaron.CONFIG;
-    train.progress += train.speed * C.TICK_MS;
-    if (train.progress >= 1) { train.progress = 1; train.state = 'unloading'; train.timer = 0; }
+  _nextIndex(train, route) {
+    const ni = train.currentStopIndex + train.direction;
+    if (ni >= route.stops.length || ni < 0) {
+      train.direction *= -1;
+      return train.currentStopIndex + train.direction;
+    }
+    return ni;
   },
 
-  _stepUnloading(train, gs) {
+  // === ETATS ===
+
+  _stepLoading(train, route, gs) {
     const C = RailBaron.CONFIG;
+    const nodeName = route.stops[train.currentStopIndex];
+    const stocks = gs.stocks[nodeName];
+
+    // Si l'arret n'est pas desservi, passer directement a moving
+    if (!train.stopsAt[train.currentStopIndex]) {
+      train.state = 'moving'; train.timer = 0; train.progress = 0;
+      return;
+    }
+
     train.timer += C.TICK_MS;
-    if (train.timer > C.UNLOAD_TIME && train.wagons > 0) {
-      train.wagons--;
-      train.timer = 0;
-      train.deliveriesThisMonth = (train.deliveriesThisMonth || 0) + 1;
 
-      const fromNode = gs.getNode(train.from);
-      const toNode = gs.getNode(train.to);
-      const gain = RailBaron.Economy.revenuePerDelivery(train.resource, fromNode, toNode, train.trainType, gs);
-      train.monthlyRevenue += gain;
-      train.lifetimeProfit += gain;
+    // Decharger d'abord les wagons non desires par cette gare (vendus au prochain stop)
+    // → le dechargement se fait dans _stepUnloading a l'arrivee
+    // Ici on charge
 
-      const destStocks = gs.stocks[train.to];
-      const destNode = gs.getNode(train.to);
-      const destAccepts = RailBaron.Tracks._getAcceptsList(destNode);
-      if (!destAccepts.has(train.resource) && train.resource !== 'passengers' && train.resource !== 'mail') {
-        destStocks[train.resource] = Math.min(C.MAX_STOCK, (destStocks[train.resource] || 0) + 1);
+    // Charger chaque type du consist
+    let loadedAny = false;
+    for (const [r, maxW] of Object.entries(train.consist)) {
+      const current = train.wagonsLoaded[r] || 0;
+      const stock = stocks[r] || 0;
+      if (current < maxW && stock > 0 && train.timer > C.LOAD_TIME) {
+        train.wagonsLoaded[r] = current + 1;
+        stocks[r]--;
+        train.timer = 0;
+        loadedAny = true;
+        break; // un wagon a la fois
       }
-    } else if (train.wagons === 0) {
-      train.state = 'returning';
+    }
+
+    // Verifier si on doit partir
+    const allFull = Object.entries(train.consist).every(([r, maxW]) => (train.wagonsLoaded[r] || 0) >= maxW);
+    const allEmpty = Object.values(train.wagonsLoaded).every(v => (v || 0) === 0);
+    const stockDry = Object.entries(train.consist).every(([r, maxW]) => {
+      return (train.wagonsLoaded[r] || 0) >= maxW || (stocks[r] || 0) === 0;
+    });
+
+    const shouldDepart = allFull || (stockDry && !allEmpty) ||
+      (!allEmpty && train.status === 'on_demand');
+
+    if (shouldDepart && !allEmpty) {
+      train.state = 'moving'; train.progress = 0; train.timer = 0;
     }
   },
 
-  _stepReturning(train) {
+  _stepMoving(train, route) {
     const C = RailBaron.CONFIG;
-    train.progress -= train.speed * C.TICK_MS;
-    if (train.progress <= 0) { train.progress = 0; train.state = 'loading'; }
+    // Distance entre current et next stop
+    const curNode = this._currentNode(train, route);
+    const nextIdx = this._nextIndex(train, route);
+    const nextNode = RailBaron.findNode(route.stops[nextIdx]);
+    const dist = RailBaron.dist(curNode, nextNode);
+
+    // Vitesse en pixels/ms → temps pour 1 segment
+    const segmentTime = dist / (train.speed * 1000);
+    if (segmentTime <= 0) { train.progress = 1; }
+    else { train.progress += C.TICK_MS / segmentTime; }
+
+    if (train.progress >= 1) {
+      train.progress = 0;
+      train.currentStopIndex = nextIdx;
+      train.state = 'unloading';
+      train.timer = 0;
+    }
+  },
+
+  _stepUnloading(train, route, gs) {
+    const C = RailBaron.CONFIG;
+    const nodeName = route.stops[train.currentStopIndex];
+    const node = gs.getNode(nodeName);
+    const accepts = RailBaron.Tracks._getAcceptsList(node);
+
+    // Si l'arret n'est pas desservi, passer directement
+    if (!train.stopsAt[train.currentStopIndex]) {
+      train.state = 'loading'; train.timer = 0;
+      return;
+    }
+
+    train.timer += C.TICK_MS;
+
+    // Decharger les wagons acceptes par cette gare
+    let unloadedAny = false;
+    for (const [r, loaded] of Object.entries(train.wagonsLoaded)) {
+      if (loaded > 0 && accepts.has(r) && train.timer > C.UNLOAD_TIME) {
+        train.wagonsLoaded[r] = loaded - 1;
+        train.timer = 0;
+        train.deliveriesThisMonth = (train.deliveriesThisMonth || 0) + 1;
+
+        // Calcul du revenu : du dernier stop charge a ce stop
+        // On utilise le stop precedent comme "from" (approximation)
+        const prevIdx = train.currentStopIndex - train.direction;
+        const fromNodeName = (prevIdx >= 0 && prevIdx < route.stops.length) ? route.stops[prevIdx] : nodeName;
+        const fromNode = gs.getNode(fromNodeName);
+        const gain = RailBaron.Economy.revenuePerDelivery(r, fromNode, node, train.trainType, gs);
+        train.monthlyRevenue += gain;
+        train.lifetimeProfit += gain;
+        unloadedAny = true;
+        break; // un wagon a la fois
+      }
+    }
+
+    // Tout est decharge ?
+    const allEmpty = Object.values(train.wagonsLoaded).every(v => (v || 0) === 0);
+    if (allEmpty) {
+      train.state = 'loading'; train.timer = 0;
+    }
   }
 };

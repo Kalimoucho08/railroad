@@ -292,6 +292,12 @@ option { color: #111; }
   font-size: var(--text-xs);
 }
 
+/* --- Consist builder --- */
+.consist-row {
+  display: flex; align-items: center; gap: 4px;
+  padding: 3px 0; font-size: var(--text-xs);
+}
+
 /* --- Train action buttons --- */
 .train-actions {
   display: flex; gap: 3px; margin-top: 4px;

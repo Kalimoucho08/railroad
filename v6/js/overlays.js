@@ -111,13 +111,16 @@ RailBaron.Overlays = {
   showTrainDetail(train, gs, camera, canvas) {
     this.closeDetail();
     const C = RailBaron.CONFIG;
-    const res = C.CARGO[train.resource] || C.RESOURCES[train.resource] || { label: train.resource };
+    const route = gs.routes.find(r => r.id === train.routeId);
+    const routeName = route ? route.name : '?';
+    const consistList = train.consist ? Object.entries(train.consist).map(([r, n]) => `${n}x${(C.CARGO[r] || {}).label || r}`).join(', ') : '?';
+    const loadedList = train.wagonsLoaded ? Object.entries(train.wagonsLoaded).filter(([,v]) => v > 0).map(([r, v]) => `${v}x${(C.CARGO[r] || {}).label || r}`).join(', ') || 'vide' : '?';
 
-    let body = `<p><strong>Ressource:</strong> ${res.label}</p>`;
-    body += `<p><strong>Ligne:</strong> ${train.from} → ${train.to}</p>`;
-    body += `<p><strong>Wagons:</strong> ${train.wagons}/${train.maxWagons}</p>`;
-    body += `<p><strong>Etat:</strong> ${train.state}</p>`;
-    body += `<p><strong>Type:</strong> ${train.trainType === 'limited' ? 'Limited (express)' : 'Local'}</p>`;
+    let body = `<p><strong>Route:</strong> ${routeName}</p>`;
+    body += `<p><strong>Consist:</strong> ${consistList}</p>`;
+    body += `<p><strong>Charge:</strong> ${loadedList}</p>`;
+    body += `<p><strong>Arret:</strong> ${route ? route.stops[train.currentStopIndex] : '?'} · ${train.state}</p>`;
+    body += `<p><strong>Type:</strong> ${train.trainType === 'limited' ? 'Limited (express)' : 'Local'} | ${train.status}</p>`;
     body += `<p><strong>Recettes mois:</strong> ${RailBaron.money(train.monthlyRevenue)}</p>`;
     body += `<p><strong>Profit total:</strong> ${RailBaron.money(train.lifetimeProfit)}</p>`;
 
