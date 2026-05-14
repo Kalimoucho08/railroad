@@ -41,6 +41,7 @@ RailBaron.Input = {
     // Mise a jour de la tuile survolee
     const world = this.camera.screenToWorld(e.offsetX, e.offsetY);
     this.gs.hoveredTile = RailBaron.Tiles.getTile(this.gs, world.x, world.y);
+    this._updateTooltip(e);
 
     // Drag
     if (this._dragging || this._middleDown) {
@@ -90,6 +91,44 @@ RailBaron.Input = {
         this.camera.y = 0;
         break;
     }
+  },
+
+  _updateTooltip(e) {
+    const tooltip = document.getElementById('tileTooltip');
+    if (!tooltip) return;
+    const ht = this.gs.hoveredTile;
+    if (!ht || !ht.tile) {
+      tooltip.style.display = 'none';
+      return;
+    }
+    const tDef = RailBaron.CONFIG.TERRAIN_TYPES[ht.tile.terrain];
+    const terrain = tDef ? tDef.label : ht.tile.terrain;
+    let lines = [];
+    lines.push(`[${ht.col},${ht.row}] ${terrain}  elev:${ht.tile.elevation}`);
+    if (ht.tile.building) {
+      const s = ht.tile.structure;
+      const city = this.gs.cities.find(c => c.id === s);
+      if (city) {
+        let cityInfo = `Ville: ${city.name} (pop ${city.population})`;
+        if (city.industryCount > 0) cityInfo += ` — ${city.industryCount} ind.`;
+        lines.push(cityInfo);
+      }
+      const ind = this.gs.industries.find(i => i.id === s);
+      if (ind) {
+        const attachedCity = ind.cityId ? this.gs.cities.find(c => c.id === ind.cityId) : null;
+        const cityNote = attachedCity ? ` (→ ${attachedCity.name})` : '';
+        lines.push(`${ind.label}${cityNote}`);
+      }
+    }
+    if (ht.tile.resource) {
+      const cargoLabels = { grain:'Grain', lumber:'Bois', coal:'Charbon', iron_ore:'Fer', oil:'Petrole' };
+      lines.push(`${cargoLabels[ht.tile.resource] || ht.tile.resource}: ${ht.tile.resourceAmount}`);
+    }
+    tooltip.innerHTML = lines.join('<br>');
+    tooltip.style.display = 'block';
+    const rect = this.canvas.getBoundingClientRect();
+    tooltip.style.left = (e.clientX - rect.left) + 'px';
+    tooltip.style.top = (e.clientY - rect.top) + 'px';
   },
 
   _fitToWorld() {

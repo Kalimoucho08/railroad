@@ -79,6 +79,12 @@ html, body {
   border-radius: 2px;
   border: 1px solid rgba(255,255,255,0.2);
 }
+.legend-sep {
+  width: 1px;
+  height: 14px;
+  background: rgba(255,255,255,0.2);
+  margin: 0 2px;
+}
 
 /* --- Bottombar --- */
 .bottombar {
@@ -92,6 +98,22 @@ html, body {
   color: var(--text2);
   flex-shrink: 0;
   user-select: none;
+}
+
+/* --- Tooltip --- */
+.tooltip {
+  position: absolute;
+  pointer-events: none;
+  background: rgba(0,0,0,0.85);
+  color: #fff;
+  padding: 4px 8px;
+  border-radius: 3px;
+  font-size: 11px;
+  line-height: 1.4;
+  white-space: nowrap;
+  z-index: 20;
+  transform: translate(12px, -12px);
+  border: 1px solid rgba(255,255,255,0.2);
 }
 
 /* --- Selection highlight --- */

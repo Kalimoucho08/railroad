@@ -22,6 +22,7 @@
   <!-- Zone principale -->
   <main class="map-container" id="mapContainer">
     <canvas id="gameCanvas"></canvas>
+    <div class="tooltip" id="tileTooltip" style="display:none"></div>
     <div class="legend" id="mapLegend">
       <span><span class="swatch" style="background:#7aad4f"></span>Plaine</span>
       <span><span class="swatch" style="background:#3d6b2e"></span>Forêt</span>
@@ -30,6 +31,10 @@
       <span><span class="swatch" style="background:#4a90c4"></span>Eau</span>
       <span><span class="swatch" style="background:#6b8c5c"></span>Marais</span>
       <span><span class="swatch" style="background:#d4c898"></span>Désert</span>
+      <span class="legend-sep"></span>
+      <span><span class="swatch" style="background:#f0d37a"></span>Ville</span>
+      <span><span class="swatch" style="background:#e8903a"></span>Industrie</span>
+      <span><span class="swatch" style="background:#2f2f32;border-radius:50%"></span>Ressource</span>
     </div>
   </main>
 
@@ -48,6 +53,7 @@
 <script src="js/config.js"></script>
 <script src="js/camera.js"></script>
 <script src="js/tiles.js"></script>
+<script src="js/generation.js"></script>
 <script src="js/game-state.js"></script>
 <script src="js/renderer.js"></script>
 <script src="js/input.js"></script>

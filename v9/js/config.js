@@ -26,12 +26,21 @@ RailBaron.CONFIG = {
     desert:    { label: 'Désert',   color: '#d4c898', costMult: 2.5, speedMult: 0.7 }
   },
 
+  // --- Generation procedurale ---
+  DEFAULT_SEED: 0,  // 0 = aleatoire (Date.now())
+
+  CITY_NAMES: [
+    'Paris', 'Lyon', 'Marseille', 'Lille', 'Bordeaux',
+    'Nantes', 'Nancy', 'Rouen', 'Strasbourg', 'Toulouse',
+    'Orleans', 'Dijon', 'Amiens', 'Reims', 'Le Havre'
+  ],
+
   // --- Legacy / compat ---
   STARTING_CAPITAL: 1000000,
   START_YEAR: 1890,
   CURRENCY: '€',
-  CANVAS_WIDTH: 3200,
-  CANVAS_HEIGHT: 2304
+  CANVAS_WIDTH: 19200,
+  CANVAS_HEIGHT: 12800
 };
 
 RailBaron.money = v => {

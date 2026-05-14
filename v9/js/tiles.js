@@ -22,50 +22,6 @@ RailBaron.Tiles = {
     return grid;
   },
 
-  /** Generation placeholder (pseudo-elevation par sinus) en attendant le Perlin de l'etape 2 */
-  generatePlaceholder(gs) {
-    const C = RailBaron.CONFIG;
-    for (let col = 0; col < C.GRID_COLS; col++) {
-      for (let row = 0; row < C.GRID_ROWS; row++) {
-        const elev = this._pseudoElevation(col, row);
-        const terrain = this._elevationToTerrain(elev);
-        gs.tiles[col][row].terrain = terrain;
-        gs.tiles[col][row].elevation = elev;
-      }
-    }
-  },
-
-  /** Pseudo-elevation par somme de sinusoides */
-  _pseudoElevation(col, row) {
-    const C = RailBaron.CONFIG;
-    const fx = col / C.GRID_COLS, fy = row / C.GRID_ROWS;
-    // Bords = eau garantie (proportionnel a la taille)
-    const edgeCols = Math.round(C.GRID_COLS * 0.04);
-    const edgeRows = Math.round(C.GRID_ROWS * 0.05);
-    const edgeDist = Math.min(col, C.GRID_COLS - 1 - col, row, C.GRID_ROWS - 1 - row);
-    if (edgeDist <= 1) return 5;
-    if (edgeDist <= edgeCols * 0.4) return 12;
-
-    let e = 0;
-    e += Math.sin(fx * 14 + fy * 10) * 0.30;
-    e += Math.sin(fx * 22 - fy * 18 + 1.7) * 0.20;
-    e += Math.sin(fx * 5 + fy * 25 + 0.4) * 0.25;
-    e += Math.cos(fx * 17 + fy * 11) * 0.15;
-    e += Math.sin(fx * 35 - fy * 28) * 0.10;
-    e = (e + 0.65) / 1.30 * 100;
-    return Math.max(0, Math.min(100, Math.round(e)));
-  },
-
-  /** Conversion elevation → type de terrain */
-  _elevationToTerrain(elev) {
-    if (elev <= 15) return 'water';
-    if (elev <= 25) return 'swamp';
-    if (elev <= 45) return 'plains';
-    if (elev <= 65) return 'forest';
-    if (elev <= 80) return 'hills';
-    return 'mountains';
-  },
-
   /** Coordonnees monde → {col, row} */
   worldToTile(wx, wy) {
     const T = RailBaron.CONFIG.TILE_SIZE;

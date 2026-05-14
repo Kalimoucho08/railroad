@@ -15,12 +15,14 @@ RailBaron.GameState = class {
     this.showGrid = true;          // affichage de la grille
 
     this.tiles = RailBaron.Tiles.createGrid();
-    RailBaron.Tiles.generatePlaceholder(this);
-
+    this.cities = [];
+    this.industries = [];
     this.trains = [];
     this.routes = [];
     this.edges = [];
     this.log = [];
+
+    RailBaron.Generation.generate(this);
   }
 
   addLog(msg) {

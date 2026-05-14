@@ -26,6 +26,14 @@ RailBaron.Renderer = {
 
     this._drawTilesLOD(gs, ctx, range, step);
 
+    // Details visibles seulement a zoom suffisant
+    if (screenTS >= 4) {
+      this._drawResources(gs, ctx, range);
+    }
+    if (screenTS >= 4) {
+      this._drawBuildings(gs, ctx, range);
+    }
+
     if (gs.showGrid && screenTS >= 6) {
       this._drawGrid(ctx, range);
     }
@@ -33,6 +41,9 @@ RailBaron.Renderer = {
     this._drawHighlight(gs, ctx);
 
     ctx.restore();
+
+    // Labels en espace ecran (taille fixe, lisibles a tout zoom)
+    this._drawCityLabelsScreen(gs, camera, w, h);
   },
 
   /** Dessiner les tuiles avec terrain + elevation fusionnes */
@@ -90,6 +101,98 @@ RailBaron.Renderer = {
     ctx.strokeStyle = 'rgba(255,255,255,0.3)';
     ctx.lineWidth = 2;
     ctx.strokeRect(0, 0, C.WORLD_W, C.WORLD_H);
+  },
+
+  /** Dessiner les batiments (villes, industries) */
+  _drawBuildings(gs, ctx, range) {
+    const T = RailBaron.CONFIG.TILE_SIZE;
+    const colors = {
+      city:       '#f0d37a',
+      steel_mill: '#9aa4ad',
+      factory:    '#e8903a',
+      sawmill:    '#8cc63f',
+      food_plant: '#c9a845',
+      refinery:   '#16213e'
+    };
+
+    for (let col = range.colStart; col <= range.colEnd; col++) {
+      for (let row = range.rowStart; row <= range.rowEnd; row++) {
+        const tile = gs.tiles[col][row];
+        if (!tile.building) continue;
+        const color = colors[tile.building] || '#ffffff';
+        ctx.fillStyle = color;
+        ctx.globalAlpha = 0.85;
+        ctx.fillRect(col * T + 1, row * T + 1, T - 2, T - 2);
+        ctx.globalAlpha = 1;
+        // Bordure
+        ctx.strokeStyle = 'rgba(255,255,255,0.6)';
+        ctx.lineWidth = 2;
+        ctx.strokeRect(col * T + 1, row * T + 1, T - 2, T - 2);
+      }
+    }
+  },
+
+  /** Noms des villes en espace ecran (taille police fixe, lisibles a tout zoom) */
+  _drawCityLabelsScreen(gs, camera, canvasW, canvasH) {
+    const ctx = this.ctx;
+    const T = RailBaron.CONFIG.TILE_SIZE;
+    const screenTS = T * camera.zoom;
+
+    // Cacher les labels si les tuiles sont trop petites
+    if (screenTS < 3) return;
+
+    ctx.font = 'bold 11px Satoshi, Arial, sans-serif';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'bottom';
+
+    for (const city of gs.cities) {
+      // Centre-ville en monde, converti en ecran
+      const wx = (city.col + city.size / 2) * T;
+      const wy = city.row * T;
+      const screen = camera.worldToScreen(wx, wy);
+
+      // Viewport culling
+      if (screen.x < -50 || screen.x > canvasW + 50 ||
+          screen.y < -50 || screen.y > canvasH + 50) continue;
+
+      // Fond semi-transparent
+      const nameWidth = ctx.measureText(city.name).width;
+      ctx.fillStyle = 'rgba(0,0,0,0.6)';
+      ctx.fillRect(screen.x - nameWidth / 2 - 4, screen.y - 16, nameWidth + 8, 16);
+
+      // Texte
+      ctx.fillStyle = '#fff';
+      ctx.fillText(city.name, screen.x, screen.y - 2);
+    }
+    ctx.textAlign = 'start';
+  },
+
+  /** Dessiner les indicateurs de ressources */
+  _drawResources(gs, ctx, range) {
+    const T = RailBaron.CONFIG.TILE_SIZE;
+    const cargoColors = {
+      grain: '#c9a845', lumber: '#6e4a24', coal: '#2f2f32',
+      iron_ore: '#8b4513', oil: '#1a1a2e'
+    };
+
+    for (let col = range.colStart; col <= range.colEnd; col++) {
+      for (let row = range.rowStart; row <= range.rowEnd; row++) {
+        const tile = gs.tiles[col][row];
+        if (!tile.resource) continue;
+        if (tile.building) continue; // cacher sous les batiments
+        const color = cargoColors[tile.resource] || '#888';
+        const cx = col * T + T / 2;
+        const cy = row * T + T / 2;
+        const r = Math.min(8, T * 0.15);
+        ctx.fillStyle = color;
+        ctx.beginPath();
+        ctx.arc(cx, cy, r, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.strokeStyle = 'rgba(255,255,255,0.4)';
+        ctx.lineWidth = 0.8;
+        ctx.stroke();
+      }
+    }
   },
 
   /** Surbrillance tuile survolee + selectionnee */

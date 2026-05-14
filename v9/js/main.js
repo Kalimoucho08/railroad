@@ -54,8 +54,19 @@ RailBaron.Main = {
     const ht = gs.hoveredTile;
     if (ht && ht.tile) {
       const tDef = RailBaron.CONFIG.TERRAIN_TYPES[ht.tile.terrain];
-      const label = tDef ? tDef.label : ht.tile.terrain;
-      el.textContent = `[${ht.col},${ht.row}] ${label}  elev:${ht.tile.elevation}`;
+      const terrain = tDef ? tDef.label : ht.tile.terrain;
+      let extra = '';
+      if (ht.tile.building) {
+        const struct = ht.tile.structure;
+        const city = gs.cities.find(c => c.id === struct);
+        if (city) extra = ` | Ville: ${city.name} (pop ${city.population})`;
+        const ind = gs.industries.find(i => i.id === struct);
+        if (ind) extra = ` | ${ind.label}`;
+      }
+      if (ht.tile.resource) {
+        extra += ` | ${ht.tile.resource}: ${ht.tile.resourceAmount}`;
+      }
+      el.textContent = `[${ht.col},${ht.row}] ${terrain}  elev:${ht.tile.elevation}${extra}`;
     } else {
       el.textContent = 'Survolez une tuile';
     }
