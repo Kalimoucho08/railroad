@@ -53,18 +53,98 @@ RailBaron.Renderer = {
     ctx.fill();
   },
 
-  // Cercles de terrain autour des noeuds
+  // Rivières, forets, montagnes
   _drawTerrain(gs, ctx) {
     const C = RailBaron.CONFIG;
+
+    // Forets (cercles verts avec texture)
+    for (const f of C.FORESTS) {
+      ctx.fillStyle = '#1a4a1a';
+      ctx.globalAlpha = 0.3;
+      ctx.beginPath(); ctx.arc(f.x, f.y, f.r, 0, Math.PI*2); ctx.fill();
+      // Petits arbres
+      ctx.fillStyle = '#0d3d0d';
+      ctx.globalAlpha = 0.5;
+      for (let i = 0; i < 8; i++) {
+        const angle = (i / 8) * Math.PI * 2 + Math.random() * 0.3;
+        const dist = f.r * (0.3 + Math.random() * 0.6);
+        const tx = f.x + Math.cos(angle) * dist;
+        const ty = f.y + Math.sin(angle) * dist;
+        ctx.beginPath();
+        ctx.moveTo(tx, ty - 5);
+        ctx.lineTo(tx - 4, ty + 3);
+        ctx.lineTo(tx + 4, ty + 3);
+        ctx.closePath();
+        ctx.fill();
+      }
+    }
+    ctx.globalAlpha = 1.0;
+
+    // Montagnes (triangles gris-brun)
+    for (const m of C.MOUNTAINS) {
+      ctx.fillStyle = '#6b5b4a';
+      ctx.globalAlpha = 0.4;
+      ctx.beginPath(); ctx.arc(m.x, m.y, m.r, 0, Math.PI*2); ctx.fill();
+      ctx.fillStyle = '#5a4a3a';
+      ctx.globalAlpha = 0.6;
+      for (let i = 0; i < 5; i++) {
+        const mx = m.x + (Math.random() - 0.5) * m.r * 1.2;
+        const my = m.y + (Math.random() - 0.5) * m.r * 1.2;
+        const s = 8 + Math.random() * 12;
+        ctx.beginPath();
+        ctx.moveTo(mx - s, my + s*0.6);
+        ctx.lineTo(mx, my - s*0.8);
+        ctx.lineTo(mx + s, my + s*0.6);
+        ctx.closePath();
+        ctx.fill();
+        // Neige
+        ctx.fillStyle = '#e8e4d9';
+        ctx.globalAlpha = 0.5;
+        ctx.beginPath();
+        ctx.moveTo(mx - s*0.3, my - s*0.1);
+        ctx.lineTo(mx, my - s*0.8);
+        ctx.lineTo(mx + s*0.3, my - s*0.1);
+        ctx.closePath();
+        ctx.fill();
+        ctx.fillStyle = '#5a4a3a';
+        ctx.globalAlpha = 0.6;
+      }
+    }
+    ctx.globalAlpha = 1.0;
+
+    // Rivieres (courbes bleues)
+    for (const river of C.RIVERS) {
+      if (river.points.length < 2) continue;
+      ctx.strokeStyle = '#3a7abf';
+      ctx.lineWidth = 5;
+      ctx.globalAlpha = 0.6;
+      ctx.beginPath();
+      ctx.moveTo(river.points[0][0], river.points[0][1]);
+      for (let i = 1; i < river.points.length - 1; i += 2) {
+        const cp1 = river.points[i];
+        const cp2 = river.points[i + 1] || river.points[i];
+        const end = river.points[i + 1] || river.points[i];
+        ctx.quadraticCurveTo(cp1[0], cp1[1], end[0], end[1]);
+      }
+      ctx.stroke();
+      // Bordure plus foncee
+      ctx.strokeStyle = '#2a5a8f';
+      ctx.lineWidth = 1.5;
+      ctx.globalAlpha = 0.4;
+      ctx.stroke();
+    }
+    ctx.globalAlpha = 1.0;
+
+    // Cercles de terrain autour des noeuds
     for (const node of C.NODES) {
       const tDef = C.TERRAIN_TYPES[node.terrain] || C.TERRAIN_TYPES.plains;
       ctx.fillStyle = tDef.color;
-      ctx.globalAlpha = 0.25;
+      ctx.globalAlpha = 0.2;
       ctx.beginPath();
       ctx.arc(node.x, node.y, 35, 0, Math.PI * 2);
       ctx.fill();
-      ctx.globalAlpha = 1.0;
     }
+    ctx.globalAlpha = 1.0;
   },
 
   _drawTracks(gs, ctx) {
@@ -94,6 +174,19 @@ RailBaron.Renderer = {
       ctx.moveTo(a.x, a.y);
       ctx.lineTo(b.x, b.y);
       ctx.stroke();
+
+      // Marqueur pont/tunnel au milieu
+      if (e.hasBridge || e.hasTunnel) {
+        const mx = (a.x + b.x) / 2, my = (a.y + b.y) / 2;
+        ctx.fillStyle = e.hasTunnel ? '#3a2a1a' : '#1a4a8a';
+        ctx.fillRect(mx - 6, my - 6, 12, 12);
+        ctx.fillStyle = '#fff';
+        ctx.font = 'bold 9px sans-serif';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText(e.hasTunnel ? 'T' : 'P', mx, my);
+        ctx.textAlign = 'start';
+      }
     }
   },
 

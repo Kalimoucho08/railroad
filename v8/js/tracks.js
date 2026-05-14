@@ -33,7 +33,12 @@ RailBaron.Tracks = {
     // Pont si le terrain est aquatique
     const needsBridge = tDef.needsBridge;
     const bridgeCost = needsBridge ? C.BRIDGE_COST : 0;
-    const totalCost = cost + bridgeCost;
+    // Tunnel si montagne avec forte pente
+    const avgElev = ((nodeA.elevation || 0) + (nodeB.elevation || 0)) / 2;
+    const elevDiff = Math.abs((nodeA.elevation || 0) - (nodeB.elevation || 0));
+    const needsTunnel = (terrain === 'mountains' && elevDiff > 30) || avgElev > C.TUNNEL_MIN_ELEVATION;
+    const tunnelCost = needsTunnel ? C.TUNNEL_COST : 0;
+    const totalCost = cost + bridgeCost + tunnelCost;
 
     if (gs.cash < totalCost) {
       gs.addLog(`Capital insuffisant (cout : ${RailBaron.money(totalCost)}).`);
@@ -42,11 +47,15 @@ RailBaron.Tracks = {
     gs.cash -= totalCost;
     const edge = {
       id: gs.nextEdgeId(), a: nodeA.name, b: nodeB.name,
-      cost: totalCost, terrain, builtTurn: gs.turn
+      cost: totalCost, terrain, builtTurn: gs.turn,
+      hasTunnel: needsTunnel, hasBridge: needsBridge
     };
     gs.edges.push(edge);
-    const bridgeNote = needsBridge ? ' (avec pont)' : '';
-    gs.addLog(`Voie ${nodeA.name} ↔ ${nodeB.name} (${tDef.label})${bridgeNote} : ${RailBaron.money(totalCost)}.`);
+    const notes = [];
+    if (needsBridge) notes.push('pont');
+    if (needsTunnel) notes.push('tunnel');
+    const noteStr = notes.length ? ' (' + notes.join('+') + ')' : '';
+    gs.addLog(`Voie ${nodeA.name} ↔ ${nodeB.name} (${tDef.label})${noteStr} : ${RailBaron.money(totalCost)}.`);
     return edge;
   },
 

@@ -48,8 +48,35 @@ RailBaron.CONFIG = {
     water:     { label: 'Eau',     costMult: 5.0, speedMult: 0.6, wearMult: 3.0, color: '#2a6a93', needsBridge: true },
     coast:     { label: 'Littoral',costMult: 1.3, speedMult: 0.9, wearMult: 1.2, color: '#5b8c7a' }
   },
-  // Cout supplementaire pour un pont (si le segment traverse de l'eau)
+  // Cout supplementaire pont et tunnel
   BRIDGE_COST: 50000,
+  TUNNEL_COST: 120000,
+  TUNNEL_MIN_ELEVATION: 70,  // elevation min pour qu'un tunnel soit necessaire
+
+  // --- Terrains visuels ---
+  // Rivieres (series de points formant des courbes)
+  RIVERS: [
+    { name: 'Seine', points: [[380,100],[420,150],[460,180],[440,220],[400,280],[350,320],[300,380],[280,450],[260,520]] },
+    { name: 'Loire', points: [[200,280],[280,310],[350,340],[420,360],[500,380],[560,400],[620,420]] },
+    { name: 'Rhone',  points: [[680,300],[700,340],[720,380],[740,440],[760,500]] },
+    { name: 'Rhin',   points: [[780,60],[750,100],[720,140],[690,180],[670,220]] },
+    { name: 'Garonne',points: [[180,460],[220,490],[260,520]] }
+  ],
+  // Forets (x, y, radius)
+  FORESTS: [
+    { x: 520, y: 70,  r: 50 },
+    { x: 580, y: 90,  r: 40 },
+    { x: 700, y: 250, r: 35 },
+    { x: 150, y: 380, r: 30 },
+    { x: 300, y: 160, r: 28 },
+  ],
+  // Zones montagneuses (x, y, radius)
+  MOUNTAINS: [
+    { x: 700, y: 280, r: 60 },
+    { x: 880, y: 200, r: 50 },
+    { x: 820, y: 160, r: 45 },
+    { x: 520, y: 60,  r: 35 },
+  ],
 
   // --- Trains ---
   TRAIN_COST: 50000,
