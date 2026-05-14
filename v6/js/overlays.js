@@ -175,8 +175,7 @@ RailBaron.Overlays = {
         const route = gs.routes.find(r => r.id === t.routeId);
         const rtName = route ? route.name : '?';
         const consistStr = t.consist ? Object.entries(t.consist).map(([r, n]) => `${n}x${(RailBaron.CONFIG.CARGO[r] || {}).label || r}`).join(', ') : '';
-        body += `<div class="tt-row"><span>${t.id} ${st} ${consistStr}</span><span>${RailBaron.money(t.monthlyRevenue)} | vie: ${RailBaron.money(t.lifetimeProfit)}</span></div>`;
-        body += `<div class="mini">Route: ${rtName}</div>`;
+        body += `<div class="tt-row"><span>${t.id} ${st} ${consistStr}<br><span class="mini">${rtName}</span></span><span>${RailBaron.money(t.monthlyRevenue)}<br><span class="mini">vie: ${RailBaron.money(t.lifetimeProfit)}</span></span></div>`;
       }
     } else { body += '<p class="mini">Aucun train.</p>'; }
 

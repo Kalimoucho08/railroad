@@ -31,7 +31,6 @@ RailBaron.UI = {
       trainCount:  q('#trainCount'),
       toolStatus:  q('#toolStatus'),
       routeSelect: q('#routeSelect'),
-      resourceSelect: q('#resourceSelect'),
       resourceList:   q('#resourceList'),
       stationList:    q('#stationList'),
       trainList:      q('#trainList'),
@@ -125,6 +124,10 @@ RailBaron.UI = {
       if (!this.gs.selectedNode) {
         this.gs.selectedNode = node;
         this.gs.addLog(`${node.name} selectionne.`);
+      } else if (this.gs.selectedNode.name === node.name) {
+        // Re-clic sur le meme noeud → fiche detail
+        RailBaron.Overlays.showNodeDetail(node, this.gs);
+        this.gs.selectedNode = null;
       } else {
         if (this.gs.tool === 'rail') {
           RailBaron.Tracks.build(this.gs, this.gs.selectedNode, node);

@@ -41,10 +41,14 @@ RailBaron.Input = {
     const pos = this.canvasPos(e);
     const world = this.camera.screenToWorld(pos.x, pos.y);
 
-    // Priorite au noeud (sinon les trains bloquent le clic sur les gares)
+    // Priorite au noeud
     const hitNode = this.renderer.getNodeAt(world.x, world.y);
-    if (hitNode && e.button === 0) {
-      // Le clic jeu est gere par ui.js, on laisse passer
+    if (hitNode) {
+      if (e.button === 2) {
+        // Clic droit → fiche detail gare
+        if (RailBaron.Overlays) RailBaron.Overlays.showNodeDetail(hitNode, this.gs);
+      }
+      // Clic gauche → laisse passer (gere par ui.js)
       return;
     }
 
