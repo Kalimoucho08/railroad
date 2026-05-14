@@ -7,6 +7,22 @@ RailBaron.UI = {
     this._pinned = true;
     this._buildingRoute = false;
 
+    // Override addLog pour afficher un toast sur les actions importantes
+    this._lastLogTime = 0;
+    const origAddLog = gs.addLog.bind(gs);
+    gs.addLog = (msg) => {
+      origAddLog(msg);
+      // Toast seulement pour les actions (pas les rapports mensuels)
+      const isAction = !/^\d{2}\/\d{4}\s*:/.test(msg) && !/^Mois\s/.test(msg) && !/^Climat\s/.test(msg);
+      if (isAction) {
+        const now = Date.now();
+        if (now - this._lastLogTime > 400) {
+          this._lastLogTime = now;
+          this._showToast(msg);
+        }
+      }
+    };
+
     this._cacheDom();
     this._wireSidebar();
     this._applyPinState();
@@ -71,6 +87,21 @@ RailBaron.UI = {
     // Sync pin icon opacity
     const pins = document.querySelectorAll('.sb-pin');
     pins.forEach(p => p.classList.toggle('active', this._pinned));
+  },
+
+  // --- Toast ---
+  _showToast(msg) {
+    const container = document.getElementById('toastContainer');
+    if (!container) return;
+    const div = document.createElement('div');
+    div.className = 'toast';
+    const isGood = msg.includes('construite') || msg.includes('creee') || msg.includes('renovee') || msg.includes('Convoi') || msg.includes('Emprunt');
+    const isBad = msg.includes('demolie') || msg.includes('revendu') || msg.includes('Capital insuffisant') || msg.includes('Impossible');
+    if (isGood) div.classList.add('good');
+    else if (isBad) div.classList.add('bad');
+    div.textContent = msg;
+    container.appendChild(div);
+    setTimeout(() => div.remove(), 2600);
   },
 
   // --- Accordions ---

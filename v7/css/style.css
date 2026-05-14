@@ -497,6 +497,34 @@ canvas {
 .detail-body { font-size: var(--text-sm); line-height: 1.5; }
 .detail-body .tt-row { margin-bottom: 3px; }
 
+/* --- Toasts --- */
+.toast-container {
+  position: absolute;
+  top: 12px; left: 50%;
+  transform: translateX(-50%);
+  z-index: 30;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  pointer-events: none;
+}
+.toast {
+  padding: 8px 18px;
+  background: var(--color-surface);
+  border: 2px solid var(--color-primary);
+  color: var(--color-text);
+  font-size: var(--text-sm);
+  font-weight: 700;
+  box-shadow: var(--shadow-md);
+  animation: toastIn 0.3s ease, toastOut 0.3s ease 2.2s forwards;
+  pointer-events: none;
+}
+.toast.good { border-color: var(--color-good); }
+.toast.bad  { border-color: var(--color-bad); }
+@keyframes toastIn  { from { opacity:0; transform:translateY(-12px); } to { opacity:1; transform:translateY(0); } }
+@keyframes toastOut { from { opacity:1; } to { opacity:0; } }
+
 /* =============================================
    WARNING BANNER
    ============================================= */
