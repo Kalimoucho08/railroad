@@ -17,6 +17,7 @@ RailBaron.Renderer = {
     this._drawBackground(ctx);
     this._drawTracks(gs, ctx);
     this._drawRoutes(gs, ctx);
+    this._drawBuildingRoute(gs, ctx);
     for (const node of RailBaron.CONFIG.NODES) {
       this._drawNode(node, gs, ctx);
     }
@@ -128,6 +129,24 @@ RailBaron.Renderer = {
       ctx.fillStyle = (RailBaron.CONFIG.CARGO[r] || RailBaron.CONFIG.RESOURCES[r] || {}).color || '#888';
       ctx.fillRect(x - 15 + i * 8, y + 17, 6, Math.min(8, 2 + v));
     });
+  },
+
+  // Route en cours de construction (pointilles)
+  _drawBuildingRoute(gs, ctx) {
+    const stops = gs._buildingRoute;
+    if (!stops || stops.length < 2) return;
+    ctx.strokeStyle = '#ffdd44';
+    ctx.lineWidth = 3;
+    ctx.setLineDash([8, 6]);
+    ctx.beginPath();
+    const first = gs.getNode(stops[0]);
+    ctx.moveTo(first.x, first.y);
+    for (let i = 1; i < stops.length; i++) {
+      const n = gs.getNode(stops[i]);
+      ctx.lineTo(n.x, n.y);
+    }
+    ctx.stroke();
+    ctx.setLineDash([]);
   },
 
   _drawTrain(train, gs, ctx) {

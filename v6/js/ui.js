@@ -197,24 +197,29 @@ RailBaron.UI = {
       this.gs._buildingRoute = [];
       document.getElementById('startRouteBtn').style.display = 'none';
       document.getElementById('cancelRouteBtn').style.display = '';
-      this.el.routeBuilderInfo.textContent = 'Cliquez les gares dans l\'ordre. Puis validez.';
+      document.getElementById('finishRouteBtn').style.display = '';
+      document.getElementById('finishRouteBtn').disabled = true;
+      this.el.routeBuilderInfo.innerHTML = '<b style="color:var(--color-primary)">Cliquez les gares dans l\'ordre sur la carte.</b>';
       this.updateSidebar();
     });
     document.getElementById('cancelRouteBtn').addEventListener('click', () => {
       this._cancelRouteBuild();
     });
+    document.getElementById('finishRouteBtn').addEventListener('click', () => {
+      this._finishRoute();
+    });
   },
 
   _addStopToRoute(node) {
     const stops = this.gs._buildingRoute || [];
-    if (stops.length > 0 && stops[stops.length - 1] === node.name) {
-      // Double-clic sur le meme noeud = valider
-      this._finishRoute();
-      return;
-    }
+    // Eviter doublon consecutif
+    if (stops.length > 0 && stops[stops.length - 1] === node.name) return;
+    // Eviter deja present (sauf pour boucler)
     stops.push(node.name);
     this.gs._buildingRoute = stops;
-    this.el.routeBuilderInfo.textContent = 'Arrets : ' + stops.join(' → ') + ' (re-cliquez le dernier pour valider)';
+    const btn = document.getElementById('finishRouteBtn');
+    if (btn) btn.disabled = stops.length < 2;
+    this.el.routeBuilderInfo.innerHTML = '<b style="color:var(--color-good)">' + stops.join(' → ') + '</b>';
     this.updateSidebar();
   },
 
@@ -231,7 +236,8 @@ RailBaron.UI = {
     this.gs._buildingRoute = null;
     document.getElementById('startRouteBtn').style.display = '';
     document.getElementById('cancelRouteBtn').style.display = 'none';
-    this.el.routeBuilderInfo.textContent = 'Cliquez des gares pour creer une route.';
+    document.getElementById('finishRouteBtn').style.display = 'none';
+    this.el.routeBuilderInfo.innerHTML = '<span class="mini">Construisez des voies puis creez une route.</span>';
     this.refreshSelectors();
     this.updateSidebar();
   },
