@@ -93,7 +93,7 @@ RailBaron.UI = {
         this.gs.tool = btn.dataset.tool;
         if (this.el.toolStatus) {
           this.el.toolStatus.textContent =
-            `Outil actif : ${this.gs.tool === 'rail' ? 'poser voie' : 'demolir'}.`;
+            `Outil actif : ${this.gs.tool === 'rail' ? 'poser voie' : this.gs.tool === 'renovate' ? 'renover voie' : 'demolir'}.`;
         }
         // Sync les boutons collapsed
         document.querySelectorAll('.sb-collapsed [data-tool]').forEach(b => {
@@ -131,6 +131,8 @@ RailBaron.UI = {
       } else {
         if (this.gs.tool === 'rail') {
           RailBaron.Tracks.build(this.gs, this.gs.selectedNode, node);
+        } else if (this.gs.tool === 'renovate') {
+          RailBaron.Tracks.renovate(this.gs, this.gs.selectedNode, node);
         } else {
           RailBaron.Tracks.remove(this.gs, this.gs.selectedNode, node);
         }
@@ -174,6 +176,16 @@ RailBaron.UI = {
     if (loanBtn) loanBtn.addEventListener('click', () => {
       RailBaron.Economy.takeLoan(this.gs);
       this.updateSidebar();
+    });
+    // Toggle vieillissement
+    const agingBtn = document.getElementById('agingToggle');
+    if (agingBtn) agingBtn.addEventListener('click', () => {
+      const C = RailBaron.CONFIG;
+      C.TRACK_AGING = !C.TRACK_AGING;
+      C.TRAIN_AGING = !C.TRAIN_AGING;
+      const on = C.TRACK_AGING;
+      agingBtn.textContent = 'Vieillissement: ' + (on ? 'ON' : 'OFF');
+      this.gs.addLog('Vieillissement ' + (on ? 'active' : 'desactive') + '.');
     });
   },
 
