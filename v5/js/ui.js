@@ -152,6 +152,17 @@ RailBaron.UI = {
       root.setAttribute('data-theme',
         root.getAttribute('data-theme') === 'dark' ? 'light' : 'dark');
     });
+    // Rapport financier
+    const reportBtn = document.getElementById('reportBtn');
+    if (reportBtn) reportBtn.addEventListener('click', () => {
+      RailBaron.Overlays.showFinancialReport(this.gs);
+    });
+    // Emprunt
+    const loanBtn = document.getElementById('loanBtn');
+    if (loanBtn) loanBtn.addEventListener('click', () => {
+      RailBaron.Economy.takeLoan(this.gs);
+      this.updateSidebar();
+    });
   },
 
   _wireSpeed() {
@@ -261,16 +272,44 @@ RailBaron.UI = {
   },
 
   _renderTrainList(gs) {
-    this.el.trainList.innerHTML = gs.trains.length
-      ? gs.trains.map(t => `<div class="tr-row">
-          <div>
-            <strong>${(RailBaron.CONFIG.CARGO[t.resource] || RailBaron.CONFIG.RESOURCES[t.resource] || {}).label || t.resource}</strong>
-            ${t.from} → ${t.to}
-            <div class="mini">${t.wagons}/${t.maxWagons} wagons · ${t.state} · profit ${RailBaron.money(t.lifetimeProfit)}</div>
+    const self = this;
+    if (!gs.trains.length) {
+      this.el.trainList.innerHTML = '<div class="mini">Aucun convoi achete.</div>';
+      return;
+    }
+    this.el.trainList.innerHTML = gs.trains.map(t => {
+      const lbl = (RailBaron.CONFIG.CARGO[t.resource] || RailBaron.CONFIG.RESOURCES[t.resource] || {}).label || t.resource;
+      const stLabels = { active: '', paused: 'PAUSE', on_demand: 'DEM.' };
+      const st = stLabels[t.status] || '';
+      return `<div class="tr-row" data-train="${t.id}">
+        <div>
+          <strong>${t.id}</strong> ${lbl} ${st}
+          <div class="mini">${t.from} → ${t.to} | ${t.wagons}/${t.maxWagons} wag. | ${t.state}</div>
+          <div class="mini">Vie: ${RailBaron.money(t.lifetimeProfit)} | Mois: ${RailBaron.money(t.monthlyRevenue)}</div>
+          <div class="train-actions">
+            ${t.status !== 'active' ? `<button class="tb-act" data-act="active" data-tid="${t.id}">▶</button>` : `<button class="tb-act" data-act="paused" data-tid="${t.id}">⏸</button>`}
+            <button class="tb-act" data-act="on_demand" data-tid="${t.id}">⏳</button>
+            <button class="tb-act tb-sell" data-act="sell" data-tid="${t.id}">Vendre</button>
           </div>
-          <div>${RailBaron.money(t.monthlyRevenue)}</div>
-        </div>`).join('')
-      : '<div class="mini">Aucun convoi achete.</div>';
+        </div>
+      </div>`;
+    }).join('');
+
+    // Wirer les boutons d'action
+    this.el.trainList.querySelectorAll('.tb-act').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const tid = btn.dataset.tid;
+        const act = btn.dataset.act;
+        if (act === 'sell') {
+          RailBaron.Trains.sellTrain(self.gs, tid);
+        } else {
+          RailBaron.Trains.setTrainStatus(self.gs, tid, act);
+        }
+        self.refreshSelectors();
+        self.updateSidebar();
+      });
+    });
   },
 
   _renderLog(gs) {

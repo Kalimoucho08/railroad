@@ -32,10 +32,13 @@ RailBaron.CONFIG = {
   // --- Trains ---
   TRAIN_COST: 50000,
   WAGON_COST: 5000,
+  SELL_REFUND_RATIO: 0.5,
   MAX_WAGONS: 6,
   PASSENGER_MAX_WAGONS: 4,
   LOAD_TIME: 380,
   UNLOAD_TIME: 330,
+  TRAIN_UPKEEP_BASE: 20,
+  TRAIN_UPKEEP_PER_WAGON: 5,
 
   // =============================================
   // CLASSES DE FRET (5)
@@ -52,18 +55,18 @@ RailBaron.CONFIG = {
   // CARGAISONS (ressources transportables)
   // =============================================
   CARGO: {
-    mail:       { label: 'Courrier',    class: 'mail',          baseRate: 40, color: '#e8d44d', perishable: true,  decayRate: 2 },
-    passengers: { label: 'Passagers',   class: 'passengers',    baseRate: 30, color: '#7fd0d8', perishable: true,  decayRate: 2 },
-    goods:      { label: 'Biens',       class: 'fast_freight',  baseRate: 20, color: '#e8903a', perishable: false, decayRate: 0 },
-    food:       { label: 'Nourriture',  class: 'fast_freight',  baseRate: 18, color: '#8cc63f', perishable: true,  decayRate: 1 },
-    steel:      { label: 'Acier',       class: 'slow_freight',  baseRate: 15, color: '#9aa4ad', perishable: false, decayRate: 0 },
-    textiles:   { label: 'Textile',     class: 'slow_freight',  baseRate: 14, color: '#b65d8f', perishable: false, decayRate: 0 },
-    grain:      { label: 'Grain',       class: 'slow_freight',  baseRate: 12, color: '#c9a845', perishable: false, decayRate: 0 },
-    lumber:     { label: 'Bois',        class: 'bulk_freight',  baseRate: 10, color: '#6e4a24', perishable: false, decayRate: 0 },
-    coal:       { label: 'Charbon',     class: 'bulk_freight',  baseRate: 8,  color: '#2f2f32', perishable: false, decayRate: 0 },
-    iron_ore:   { label: 'Minerai fer', class: 'bulk_freight',  baseRate: 9,  color: '#8b4513', perishable: false, decayRate: 0 },
-    oil:        { label: 'Petrole',     class: 'bulk_freight',  baseRate: 11, color: '#1a1a2e', perishable: false, decayRate: 0 },
-    petroleum:  { label: 'Carburant',   class: 'bulk_freight',  baseRate: 16, color: '#16213e', perishable: false, decayRate: 0 }
+    mail:       { label: 'Courrier',    class: 'mail',          baseRate: 600, color: '#e8d44d', perishable: true,  decayRate: 2 },
+    passengers: { label: 'Passagers',   class: 'passengers',    baseRate: 450, color: '#7fd0d8', perishable: true,  decayRate: 2 },
+    goods:      { label: 'Biens',       class: 'fast_freight',  baseRate: 300, color: '#e8903a', perishable: false, decayRate: 0 },
+    food:       { label: 'Nourriture',  class: 'fast_freight',  baseRate: 270, color: '#8cc63f', perishable: true,  decayRate: 1 },
+    steel:      { label: 'Acier',       class: 'slow_freight',  baseRate: 225, color: '#9aa4ad', perishable: false, decayRate: 0 },
+    textiles:   { label: 'Textile',     class: 'slow_freight',  baseRate: 210, color: '#b65d8f', perishable: false, decayRate: 0 },
+    grain:      { label: 'Grain',       class: 'slow_freight',  baseRate: 180, color: '#c9a845', perishable: false, decayRate: 0 },
+    lumber:     { label: 'Bois',        class: 'bulk_freight',  baseRate: 150, color: '#6e4a24', perishable: false, decayRate: 0 },
+    coal:       { label: 'Charbon',     class: 'bulk_freight',  baseRate: 120, color: '#2f2f32', perishable: false, decayRate: 0 },
+    iron_ore:   { label: 'Minerai fer', class: 'bulk_freight',  baseRate: 135, color: '#8b4513', perishable: false, decayRate: 0 },
+    oil:        { label: 'Petrole',     class: 'bulk_freight',  baseRate: 165, color: '#1a1a2e', perishable: false, decayRate: 0 },
+    petroleum:  { label: 'Carburant',   class: 'bulk_freight',  baseRate: 240, color: '#16213e', perishable: false, decayRate: 0 }
   },
 
   // Alias legacy pour compatibilite

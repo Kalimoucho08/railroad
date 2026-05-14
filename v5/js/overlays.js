@@ -132,6 +132,71 @@ RailBaron.Overlays = {
     }
   },
 
+  // --- Rapport financier ---
+  showFinancialReport(gs) {
+    this.closeDetail();
+    const C = RailBaron.CONFIG;
+    const hist = gs.financialHistory || [];
+    const current = hist.length ? hist[hist.length - 1] : null;
+
+    // Mois en cours
+    let body = '<h3 style="margin-bottom:6px">Mois en cours</h3>';
+    if (current) {
+      body += `<div class="tt-row"><span>Recettes</span><span class="good">+${RailBaron.money(current.revenue)}</span></div>`;
+      body += `<div class="tt-row"><span>Entretien</span><span class="bad">-${RailBaron.money(current.upkeep)}</span></div>`;
+      body += `<div class="tt-row"><span>Interets</span><span class="bad">-${RailBaron.money(current.interest)}</span></div>`;
+      body += `<div class="tt-row"><strong>Net</strong><span><strong>${RailBaron.money(current.net)}</strong></span></div>`;
+    } else { body += '<p class="mini">En attente du premier mois...</p>'; }
+
+    // Par ligne (agrege depuis les trains du snapshot)
+    if (current && current.trains.length) {
+      body += '<h3 style="margin:10px 0 6px">Par ligne (mois)</h3>';
+      const byEdge = {};
+      for (const ts of current.trains) {
+        const train = gs.trains.find(t => t.id === ts.id);
+        const key = train ? `${train.from} ↔ ${train.to}` : ts.id;
+        if (!byEdge[key]) byEdge[key] = { revenue: 0, deliveries: 0, resources: new Set() };
+        byEdge[key].revenue += ts.revenue;
+        byEdge[key].deliveries += ts.deliveries;
+        if (train) byEdge[key].resources.add(train.cargoLabel || train.resource);
+      }
+      for (const [key, data] of Object.entries(byEdge)) {
+        const resList = [...data.resources].join(', ');
+        body += `<div class="tt-row"><span>${key} <span class="mini">(${resList})</span></span><span>${RailBaron.money(data.revenue)} (${data.deliveries} liv.)</span></div>`;
+      }
+    }
+
+    // Par train
+    body += '<h3 style="margin:10px 0 6px">Par train</h3>';
+    if (gs.trains.length) {
+      for (const t of gs.trains) {
+        const stLabels = { active: '', paused: '[PAUSE]', on_demand: '[DEM.]' };
+        const st = stLabels[t.status] || '';
+        body += `<div class="tt-row"><span>${t.id} ${st} ${t.cargoLabel || t.resource} ${t.from}→${t.to}</span><span>${RailBaron.money(t.monthlyRevenue)} | vie: ${RailBaron.money(t.lifetimeProfit)} | ${t.wagons}/${t.maxWagons} wag.</span></div>`;
+      }
+    } else { body += '<p class="mini">Aucun train.</p>'; }
+
+    // Annee precedente
+    const prevYear = gs.currentYear - 1;
+    const prevYearMonths = hist.filter(h => h.year === prevYear);
+    if (prevYearMonths.length) {
+      const pyRev = prevYearMonths.reduce((s, h) => s + h.revenue, 0);
+      const pyNet = prevYearMonths.reduce((s, h) => s + h.net, 0);
+      body += `<h3 style="margin:10px 0 6px">Annee precedente (${prevYear})</h3>`;
+      body += `<div class="tt-row"><span>Recettes</span><span>${RailBaron.money(pyRev)}</span></div>`;
+      body += `<div class="tt-row"><span>Resultat net</span><span>${RailBaron.money(pyNet)}</span></div>`;
+    }
+
+    // Dette
+    body += '<h3 style="margin:10px 0 6px">Dette</h3>';
+    body += `<div class="tt-row"><span>Emprunts</span><span>${RailBaron.money(gs.totalDebt)}</span></div>`;
+    body += `<div class="tt-row"><span>Capital</span><span>${RailBaron.money(gs.cash)}</span></div>`;
+    body += `<div class="tt-row"><span>Climat eco</span><span>${C.ECONOMIC_STATES[gs.economicState].label}</span></div>`;
+
+    this._detail = this._buildDetailPanel('Rapport Financier', body);
+    document.getElementById('overlayLayer').appendChild(this._detail);
+  },
+
   _buildDetailPanel(title, bodyHtml) {
     const wrap = document.createElement('div');
     wrap.className = 'detail-overlay';

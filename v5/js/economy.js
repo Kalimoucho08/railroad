@@ -94,19 +94,19 @@ RailBaron.Economy = {
     const cls = C.CARGO_CLASSES[cargo.class];
     const dist = RailBaron.dist(fromNode, toNode);
 
-    // f(distance) selon classe
+    // f(distance) : (1 + dist/K) × sens avec K variable par classe
     let distFactor;
     switch (cargo.class) {
-      case 'mail':        distFactor = Math.log(dist / 80 + 1) * cls.distSens + 0.5; break;
-      case 'passengers':  distFactor = Math.log(dist / 120 + 1) * cls.distSens + 0.4; break;
-      case 'fast_freight': distFactor = Math.sqrt(dist / 200) * cls.distSens + 0.3; break;
-      case 'slow_freight': distFactor = (dist / 450) * cls.distSens + 0.2; break;
+      case 'mail':        distFactor = (1 + dist / 120) * cls.distSens; break;
+      case 'passengers':  distFactor = (1 + dist / 150) * cls.distSens; break;
+      case 'fast_freight': distFactor = (1 + dist / 200) * cls.distSens; break;
+      case 'slow_freight': distFactor = (1 + dist / 280) * cls.distSens; break;
       case 'bulk_freight':
-      default:            distFactor = (dist / 600) * cls.distSens + 0.15; break;
+      default:            distFactor = (1 + dist / 350) * cls.distSens; break;
     }
 
     // g(speed) — ratio vitesse train / vitesse base
-    let speedFactor = cls.speedSens;
+    let speedFactor = cls.speedSens * 1.0;
     if (trainType === 'limited') speedFactor *= 1.25;
 
     const ecoMult = C.ECONOMIC_STATES[gs.economicState].revenueMult;
@@ -131,13 +131,15 @@ RailBaron.Economy = {
 
   // --- Cout entretien mensuel ---
   monthlyUpkeep(gs) {
+    const C = RailBaron.CONFIG;
     let total = gs.edges.length * 6;
     for (const st of gs.stations) {
       total += st.size === 'depot' ? 200 : st.size === 'station' ? 400 : 800;
     }
     for (const train of gs.trains) {
-      const wc = train.wagons ? Object.values(train.wagons).reduce((a, b) => a + b, 0) : 4;
-      total += 50 + wc * 10;
+      if (train.status === 'paused') continue;  // aucun cout
+      const mul = train.status === 'on_demand' ? 0.5 : 1.0;
+      total += Math.round((C.TRAIN_UPKEEP_BASE + train.maxWagons * C.TRAIN_UPKEEP_PER_WAGON) * mul);
     }
     return total;
   },
@@ -151,20 +153,36 @@ RailBaron.Economy = {
   // --- Fin de mois ---
   processMonthEnd(gs) {
     const C = RailBaron.CONFIG;
+    const year = C.START_YEAR + Math.floor((gs.turn - 1) / 12);
+    const month = ((gs.turn - 1) % 12) + 1;
+
+    // Snapshot financier avant de vider les compteurs
     let totalRevenue = 0;
+    const trainSnaps = [];
     for (const t of gs.trains) {
       totalRevenue += t.monthlyRevenue;
+      trainSnaps.push({
+        id: t.id, resource: t.resource, from: t.from, to: t.to,
+        revenue: t.monthlyRevenue, deliveries: t.deliveriesThisMonth || 0, status: t.status
+      });
       t.monthlyRevenue = 0;
+      t.deliveriesThisMonth = 0;
     }
     const upkeep = this.monthlyUpkeep(gs);
     const interest = this.monthlyInterest(gs);
     const net = totalRevenue - upkeep - interest;
+
+    // Stocker snapshot
+    if (!gs.financialHistory) gs.financialHistory = [];
+    gs.financialHistory.push({
+      turn: gs.turn, year, month, revenue: totalRevenue, upkeep, interest, net, trains: trainSnaps
+    });
+    if (gs.financialHistory.length > 24) gs.financialHistory.shift();
+
     gs.cash += net;
     gs.turn++;
     gs._monthsInPeriod++;
 
-    const year = C.START_YEAR + Math.floor((gs.turn - 1) / 12);
-    const month = ((gs.turn - 1) % 12) + 1;
     gs.addLog(`${String(month).padStart(2,'0')}/${year} : +${RailBaron.money(totalRevenue)} rec, -${RailBaron.money(upkeep)} ent, -${RailBaron.money(interest)} int = ${RailBaron.money(net)}`);
 
     if (gs.turn > C.MAX_GAME_YEARS * 12) {
