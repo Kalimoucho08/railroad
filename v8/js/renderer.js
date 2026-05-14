@@ -178,9 +178,10 @@ RailBaron.Renderer = {
       ctx.lineTo(b.x, b.y);
       ctx.stroke();
 
-      // Marqueur pont/tunnel au milieu
+      // Marqueur pont/tunnel a la position reelle (ou au milieu)
       if (e.hasBridge || e.hasTunnel) {
-        const mx = (a.x + b.x) / 2, my = (a.y + b.y) / 2;
+        const mx = e.bridgePoint ? e.bridgePoint.x : (a.x + b.x) / 2;
+        const my = e.bridgePoint ? e.bridgePoint.y : (a.y + b.y) / 2;
         ctx.fillStyle = e.hasTunnel ? '#3a2a1a' : '#1a4a8a';
         ctx.fillRect(mx - 6, my - 6, 12, 12);
         ctx.fillStyle = '#fff';
