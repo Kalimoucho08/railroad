@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="fr" data-theme="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Rail Baron 1890 — V3.6</title>
+  <link href="https://api.fontshare.com/v2/css?f[]=satoshi@400,500,700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+<div class="app">
+  <aside class="sidebar">
+    <div class="brand">
+      <div>
+        <div class="logo-title">Rail Baron 1890</div>
+        <div class="logo-sub">V3.6 · temps réel, vitesse variable</div>
+      </div>
+      <button class="theme-btn" id="themeBtn" aria-label="Changer de thème">☼</button>
+    </div>
+
+    <section class="panel">
+      <h2>Compagnie</h2>
+      <div class="panel-body">
+        <div class="stats">
+          <div class="stat"><div class="label">Capital</div><div class="value" id="cashValue"></div></div>
+          <div class="stat"><div class="label">Profit</div><div class="value" id="profitValue"></div></div>
+          <div class="stat"><div class="label">Mois</div><div class="value" id="turnValue"></div></div>
+          <div class="stat"><div class="label">Convois</div><div class="value" id="trainCount"></div></div>
+        </div>
+        <div class="toolbar">
+          <button class="btn active" data-tool="rail">Poser voie<div class="mini">Construire une ligne</div></button>
+          <button class="btn" data-tool="delete">Démolir<div class="mini">Supprimer une ligne</div></button>
+        </div>
+        <div class="speed-bar">
+          <button class="btn speed-btn active" data-speed="0">⏸ Pause</button>
+          <button class="btn speed-btn" data-speed="1">▶ 1×</button>
+          <button class="btn speed-btn" data-speed="2">▶▶ 2×</button>
+          <button class="btn speed-btn" data-speed="4">▶▶▶ 4×</button>
+        </div>
+        <div class="month-progress">
+          <div class="progress-track"><div class="progress-fill" id="monthProgressFill"></div></div>
+          <div class="mini" id="monthProgressLabel">Mois 1/24</div>
+        </div>
+        <button class="btn" id="restartBtn">Nouvelle partie<div class="mini">Réinitialiser</div></button>
+        <div class="mini" id="toolStatus">Outil actif : poser voie.</div>
+      </div>
+    </section>
+
+    <section class="panel">
+      <h2>Affecter un convoi</h2>
+      <div class="panel-body assign-grid">
+        <select class="select" id="routeSelect"></select>
+        <select class="select" id="resourceSelect"></select>
+        <button class="btn primary" id="buyTrainBtn">Acheter un train dédié<div class="mini">120$ locomotive + wagons</div></button>
+        <div class="mini">Un train ne transporte qu'une ressource ou des passagers sur sa ligne.</div>
+      </div>
+    </section>
+
+    <section class="panel">
+      <h2>Cours des marchandises</h2>
+      <div class="panel-body resource-list" id="resourceList"></div>
+    </section>
+    <section class="panel">
+      <h2>Gares et stocks</h2>
+      <div class="panel-body station-list" id="stationList"></div>
+    </section>
+    <section class="panel">
+      <h2>Convois</h2>
+      <div class="panel-body train-list" id="trainList"></div>
+    </section>
+  </aside>
+
+  <main class="main">
+    <header class="hud">
+      <div style="display:flex;gap:12px;flex-wrap:wrap">
+        <div class="chip">Dépôts visibles</div>
+        <div class="chip">Wagons spécialisés</div>
+        <div class="chip">Stock par gare</div>
+        <div class="chip" id="selectedBadge">Sélection : aucune</div>
+      </div>
+      <div style="display:flex;gap:12px;flex-wrap:wrap">
+        <div class="chip" id="networkBadge">Voies : 0</div>
+        <div class="chip" id="speedBadge">⏸ Pause</div>
+      </div>
+    </header>
+
+    <section class="map-shell">
+      <canvas id="gameCanvas" width="1120" height="700"></canvas>
+      <div class="legend">
+        <span><span class="swatch" style="background:#f0d37a"></span>Ville / gare</span>
+        <span><span class="swatch" style="background:#6e4a24"></span>Ressources brutes</span>
+        <span><span class="swatch" style="background:#9aa4ad"></span>Industrie acier</span>
+        <span><span class="swatch" style="background:#b55f2a"></span>Industrie textile</span>
+        <span><span class="swatch" style="background:#111"></span>Locomotive</span>
+      </div>
+    </section>
+
+    <section class="log" id="logBox"></section>
+    <div class="mini">V3.6 — Temps réel, vitesse variable (⏸/1×/2×/4×), mois défilent automatiquement. Construis, affecte, observe.</div>
+  </main>
+</div>
+
+<script src="js/config.js"></script>
+<script src="js/game-state.js"></script>
+<script src="js/economy.js"></script>
+<script src="js/tracks.js"></script>
+<script src="js/trains.js"></script>
+<script src="js/renderer.js"></script>
+<script src="js/ui.js"></script>
+<script src="js/main.js"></script>
+</body>
+</html>
