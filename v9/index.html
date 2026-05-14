@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="fr" data-theme="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Rail Baron 1890 — V9</title>
+  <link href="https://api.fontshare.com/v2/css?f[]=satoshi@400,500,700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+<div class="app" id="appRoot">
+
+  <!-- Barre superieure minimale -->
+  <header class="topbar">
+    <span class="logo">Rail Baron 1890 <small>V9 — Moteur tuilé</small></span>
+    <span class="topbar-stats">
+      <span id="selectedInfo">Survolez une tuile</span>
+    </span>
+    <span class="zoom-indicator" id="zoomIndicator">100%</span>
+  </header>
+
+  <!-- Zone principale -->
+  <main class="map-container" id="mapContainer">
+    <canvas id="gameCanvas"></canvas>
+    <div class="legend" id="mapLegend">
+      <span><span class="swatch" style="background:#7aad4f"></span>Plaine</span>
+      <span><span class="swatch" style="background:#3d6b2e"></span>Forêt</span>
+      <span><span class="swatch" style="background:#b8a87d"></span>Colline</span>
+      <span><span class="swatch" style="background:#8b7b6b"></span>Montagne</span>
+      <span><span class="swatch" style="background:#4a90c4"></span>Eau</span>
+      <span><span class="swatch" style="background:#6b8c5c"></span>Marais</span>
+      <span><span class="swatch" style="background:#d4c898"></span>Désert</span>
+    </div>
+  </main>
+
+  <!-- Barre inferieure -->
+  <footer class="bottombar">
+    <span>[G] Grille</span>
+    <span>[F] Fit monde</span>
+    <span>[0] Reset zoom</span>
+    <span>Molette zoom</span>
+    <span>Glisser déplacer</span>
+    <span>Clic sélectionner</span>
+  </footer>
+
+</div>
+
+<script src="js/config.js"></script>
+<script src="js/camera.js"></script>
+<script src="js/tiles.js"></script>
+<script src="js/game-state.js"></script>
+<script src="js/renderer.js"></script>
+<script src="js/input.js"></script>
+<script src="js/main.js"></script>
+</body>
+</html>
