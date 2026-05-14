@@ -3,109 +3,160 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Rail Baron 1890 — V3.6</title>
+  <title>Rail Baron 1890 — V4</title>
   <link href="https://api.fontshare.com/v2/css?f[]=satoshi@400,500,700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="css/style.css" />
 </head>
 <body>
-<div class="app">
-  <aside class="sidebar">
-    <div class="brand">
-      <div>
-        <div class="logo-title">Rail Baron 1890</div>
-        <div class="logo-sub">V3.6 · temps réel, vitesse variable</div>
+<div class="app" id="appRoot">
+  <!-- Sidebar retractable -->
+  <aside class="sidebar" id="sidebar">
+    <div class="sb-collapsed" id="sbCollapsed">
+      <button class="sb-toggle" id="sbToggle" title="Menu">|||</button>
+      <div class="sb-tools">
+        <button class="sb-btn active" data-tool="rail" title="Poser voie">&#9881;</button>
+        <button class="sb-btn" data-tool="delete" title="Demolir">&#10005;</button>
       </div>
-      <button class="theme-btn" id="themeBtn" aria-label="Changer de thème">☼</button>
+      <div class="sb-speed">
+        <button class="sb-btn speed-btn active" data-speed="0" title="Pause">||</button>
+        <button class="sb-btn speed-btn" data-speed="1" title="Vitesse 1x">1</button>
+        <button class="sb-btn speed-btn" data-speed="2" title="Vitesse 2x">2</button>
+        <button class="sb-btn speed-btn" data-speed="4" title="Vitesse 4x">4</button>
+      </div>
+      <div class="sb-mini-stat" id="sbCash">&mdash;</div>
+      <button class="sb-btn theme-btn" id="themeBtn" title="Theme">&#9788;</button>
     </div>
 
-    <section class="panel">
-      <h2>Compagnie</h2>
-      <div class="panel-body">
-        <div class="stats">
-          <div class="stat"><div class="label">Capital</div><div class="value" id="cashValue"></div></div>
-          <div class="stat"><div class="label">Profit</div><div class="value" id="profitValue"></div></div>
-          <div class="stat"><div class="label">Mois</div><div class="value" id="turnValue"></div></div>
-          <div class="stat"><div class="label">Convois</div><div class="value" id="trainCount"></div></div>
+    <div class="sb-expanded" id="sbExpanded">
+      <div class="sb-brand">
+        <div>
+          <div class="logo-title">Rail Baron 1890</div>
+          <div class="logo-sub">V4 &middot; carte zoomable</div>
         </div>
-        <div class="toolbar">
-          <button class="btn active" data-tool="rail">Poser voie<div class="mini">Construire une ligne</div></button>
-          <button class="btn" data-tool="delete">Démolir<div class="mini">Supprimer une ligne</div></button>
-        </div>
-        <div class="speed-bar">
-          <button class="btn speed-btn active" data-speed="0">⏸ Pause</button>
-          <button class="btn speed-btn" data-speed="1">▶ 1×</button>
-          <button class="btn speed-btn" data-speed="2">▶▶ 2×</button>
-          <button class="btn speed-btn" data-speed="4">▶▶▶ 4×</button>
-        </div>
-        <div class="month-progress">
-          <div class="progress-track"><div class="progress-fill" id="monthProgressFill"></div></div>
-          <div class="mini" id="monthProgressLabel">Mois 1/24</div>
-        </div>
-        <button class="btn" id="restartBtn">Nouvelle partie<div class="mini">Réinitialiser</div></button>
-        <div class="mini" id="toolStatus">Outil actif : poser voie.</div>
+        <button class="sb-toggle" id="sbToggle2" title="Fermer">&times;</button>
       </div>
-    </section>
 
-    <section class="panel">
-      <h2>Affecter un convoi</h2>
-      <div class="panel-body assign-grid">
-        <select class="select" id="routeSelect"></select>
-        <select class="select" id="resourceSelect"></select>
-        <button class="btn primary" id="buyTrainBtn">Acheter un train dédié<div class="mini">120$ locomotive + wagons</div></button>
-        <div class="mini">Un train ne transporte qu'une ressource ou des passagers sur sa ligne.</div>
-      </div>
-    </section>
+      <!-- Stats -->
+      <section class="sb-section">
+        <div class="sb-section-hd open" data-accordion="stats">Compagnie</div>
+        <div class="sb-section-bd" id="acc-stats">
+          <div class="stat-grid">
+            <div class="stat"><span class="stat-label">Capital</span><span class="stat-val" id="cashValue"></span></div>
+            <div class="stat"><span class="stat-label">Profit</span><span class="stat-val" id="profitValue"></span></div>
+            <div class="stat"><span class="stat-label">Mois</span><span class="stat-val" id="turnValue"></span></div>
+            <div class="stat"><span class="stat-label">Convois</span><span class="stat-val" id="trainCount"></span></div>
+          </div>
+          <div class="month-progress">
+            <div class="progress-track"><div class="progress-fill" id="monthProgressFill"></div></div>
+            <div class="mini" id="monthProgressLabel">Mois 1/24</div>
+          </div>
+        </div>
+      </section>
 
-    <section class="panel">
-      <h2>Cours des marchandises</h2>
-      <div class="panel-body resource-list" id="resourceList"></div>
-    </section>
-    <section class="panel">
-      <h2>Gares et stocks</h2>
-      <div class="panel-body station-list" id="stationList"></div>
-    </section>
-    <section class="panel">
-      <h2>Convois</h2>
-      <div class="panel-body train-list" id="trainList"></div>
-    </section>
+      <!-- Outils -->
+      <section class="sb-section">
+        <div class="sb-section-hd" data-accordion="tools">Outils</div>
+        <div class="sb-section-bd" id="acc-tools">
+          <div class="tool-grid">
+            <button class="btn active" data-tool="rail">Poser voie</button>
+            <button class="btn" data-tool="delete">Demolir</button>
+          </div>
+          <div class="mini" id="toolStatus">Selectionnez un site de depart.</div>
+        </div>
+      </section>
+
+      <!-- Vitesse -->
+      <section class="sb-section">
+        <div class="sb-section-hd" data-accordion="speed">Simulation</div>
+        <div class="sb-section-bd" id="acc-speed">
+          <div class="speed-bar">
+            <button class="btn speed-btn active" data-speed="0">Pause</button>
+            <button class="btn speed-btn" data-speed="1">1&times;</button>
+            <button class="btn speed-btn" data-speed="2">2&times;</button>
+            <button class="btn speed-btn" data-speed="4">4&times;</button>
+          </div>
+          <button class="btn" id="restartBtn">Nouvelle partie</button>
+        </div>
+      </section>
+
+      <!-- Affectation convoi -->
+      <section class="sb-section">
+        <div class="sb-section-hd" data-accordion="assign">Affecter convoi</div>
+        <div class="sb-section-bd" id="acc-assign">
+          <select class="select" id="routeSelect"></select>
+          <select class="select" id="resourceSelect"></select>
+          <button class="btn primary" id="buyTrainBtn">Acheter train (120$)</button>
+        </div>
+      </section>
+
+      <!-- Cours -->
+      <section class="sb-section">
+        <div class="sb-section-hd" data-accordion="prices">Cours des marchandises</div>
+        <div class="sb-section-bd" id="acc-prices">
+          <div class="res-list" id="resourceList"></div>
+        </div>
+      </section>
+
+      <!-- Gares -->
+      <section class="sb-section">
+        <div class="sb-section-hd" data-accordion="stations">Gares et stocks</div>
+        <div class="sb-section-bd" id="acc-stations">
+          <div class="st-list" id="stationList"></div>
+        </div>
+      </section>
+
+      <!-- Convois -->
+      <section class="sb-section">
+        <div class="sb-section-hd" data-accordion="trains">Convois</div>
+        <div class="sb-section-bd" id="acc-trains">
+          <div class="tr-list" id="trainList"></div>
+        </div>
+      </section>
+    </div>
   </aside>
 
-  <main class="main">
-    <header class="hud">
-      <div style="display:flex;gap:12px;flex-wrap:wrap">
-        <div class="chip">Dépôts visibles</div>
-        <div class="chip">Wagons spécialisés</div>
-        <div class="chip">Stock par gare</div>
-        <div class="chip" id="selectedBadge">Sélection : aucune</div>
+  <!-- Zone principale -->
+  <main class="main-area">
+    <div class="map-container" id="mapContainer">
+      <canvas id="gameCanvas"></canvas>
+      <div class="overlay-layer" id="overlayLayer"></div>
+      <div class="map-legend" id="mapLegend">
+        <span><span class="swatch" style="background:#f0d37a"></span>Ville</span>
+        <span><span class="swatch" style="background:#6e4a24"></span>Ressource</span>
+        <span><span class="swatch" style="background:#9aa4ad"></span>Industrie</span>
+        <span><span class="swatch" style="background:#111"></span>Train</span>
       </div>
-      <div style="display:flex;gap:12px;flex-wrap:wrap">
-        <div class="chip" id="networkBadge">Voies : 0</div>
-        <div class="chip" id="speedBadge">⏸ Pause</div>
-      </div>
-    </header>
+      <div class="zoom-indicator" id="zoomIndicator">100%</div>
+    </div>
 
-    <section class="map-shell">
-      <canvas id="gameCanvas" width="1120" height="700"></canvas>
-      <div class="legend">
-        <span><span class="swatch" style="background:#f0d37a"></span>Ville / gare</span>
-        <span><span class="swatch" style="background:#6e4a24"></span>Ressources brutes</span>
-        <span><span class="swatch" style="background:#9aa4ad"></span>Industrie acier</span>
-        <span><span class="swatch" style="background:#b55f2a"></span>Industrie textile</span>
-        <span><span class="swatch" style="background:#111"></span>Locomotive</span>
+    <div class="bottom-bar">
+      <div class="hud-chips" id="hudChips">
+        <span class="chip" id="selectedBadge">Selection : aucune</span>
+        <span class="chip" id="networkBadge">Voies : 0</span>
+        <span class="chip" id="speedBadge">Pause</span>
       </div>
-    </section>
-
-    <section class="log" id="logBox"></section>
-    <div class="mini">V3.6 — Temps réel, vitesse variable (⏸/1×/2×/4×), mois défilent automatiquement. Construis, affecte, observe.</div>
+      <button class="log-toggle" id="logToggle">Journal</button>
+    </div>
+    <div class="log-bar" id="logBar">
+      <div class="log-content" id="logBox"></div>
+    </div>
   </main>
+
+  <!-- Bandeau fenetre trop petite -->
+  <div class="warning-banner" id="warningBanner">
+    Fenetre trop petite &mdash; minimum recommande : 800 &times; 600
+  </div>
 </div>
 
 <script src="js/config.js"></script>
+<script src="js/camera.js"></script>
+<script src="js/input.js"></script>
 <script src="js/game-state.js"></script>
 <script src="js/economy.js"></script>
 <script src="js/tracks.js"></script>
 <script src="js/trains.js"></script>
 <script src="js/renderer.js"></script>
+<script src="js/overlays.js"></script>
 <script src="js/ui.js"></script>
 <script src="js/main.js"></script>
 </body>
