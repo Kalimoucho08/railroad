@@ -14,11 +14,14 @@ RailBaron.GameState = class {
     this.selectedNode = null;
     this.hoveredNode = null;
     this.edges = [];
+    this.routes = [];
     this.trains = [];
     this.stocks = {};
     this.log = [];
+    this._buildingRoute = null;  // stops en cours de construction
     this._nextEdgeId = 0;
     this._nextTrainId = 0;
+    this._nextRouteId = 0;
   }
 
   get currentYear()  { return RailBaron.CONFIG.START_YEAR + Math.floor((this.turn - 1) / 12); }
