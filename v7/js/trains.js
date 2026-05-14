@@ -148,12 +148,9 @@ RailBaron.Trains = {
       train.state = 'moving'; train.progress = 0; train.timer = 0; train._stuckCycles = 0;
       console.log(`[${train.id}] ▶ DEPART vers ${route.stops[this._nextIndex(train, route)]}`);
     } else if (totalLoaded === 0 && !canLoadMore) {
-      train._stuckCycles = stuckCycles + 1;
-      if (train._stuckCycles > 2) {
-        train.direction *= -1;
-        train.state = 'moving'; train.progress = 0; train.timer = 0; train._stuckCycles = 0;
-        console.log(`[${train.id}] ↩ DEMI-TOUR (stuck ${train._stuckCycles}x)`);
-      }
+      // Rien a charger ici → continuer vers le prochain arret (pas de demi-tour)
+      train.state = 'moving'; train.progress = 0; train.timer = 0; train._stuckCycles = 0;
+      console.log(`[${train.id}] → RIEN A CHARGER, continuation vers ${route.stops[this._nextIndex(train, route)]}`);
     } else {
       train._stuckCycles = 0;
     }

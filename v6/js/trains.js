@@ -132,11 +132,7 @@ RailBaron.Trains = {
     if (totalLoaded > 0 && (!canLoadMore || train.status === 'on_demand')) {
       train.state = 'moving'; train.progress = 0; train.timer = 0; train._stuckCycles = 0;
     } else if (totalLoaded === 0 && !canLoadMore) {
-      train._stuckCycles = stuckCycles + 1;
-      if (train._stuckCycles > 2) {
-        train.direction *= -1;
-        train.state = 'moving'; train.progress = 0; train.timer = 0; train._stuckCycles = 0;
-      }
+      train.state = 'moving'; train.progress = 0; train.timer = 0; train._stuckCycles = 0;
     } else {
       train._stuckCycles = 0;
     }
