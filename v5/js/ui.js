@@ -4,10 +4,11 @@ RailBaron.UI = {
     this.gs = gs;
     this.renderer = renderer;
     this.camera = camera;
-    this._sidebarLocked = false;
+    this._pinned = true;
 
     this._cacheDom();
     this._wireSidebar();
+    this._applyPinState();
     this._wireAccordions();
     this._wireTools();
     this._wireCanvas();
@@ -45,33 +46,26 @@ RailBaron.UI = {
     };
   },
 
-  // --- Sidebar expand / collapse ---
+  // --- Sidebar pin ---
   _wireSidebar() {
-    const sb = this.el.sidebar;
-
-    // Survol = expand temporaire
-    sb.addEventListener('mouseenter', () => {
-      if (!this._sidebarLocked) sb.classList.add('expanded');
-    });
-    sb.addEventListener('mouseleave', () => {
-      if (!this._sidebarLocked) sb.classList.remove('expanded');
-    });
-
-    // Clic toggle = lock/unlock
-    const toggle = (locked) => {
-      this._sidebarLocked = locked;
-      if (locked) sb.classList.add('expanded');
-      else sb.classList.remove('expanded');
+    const pinToggle = () => {
+      this._pinned = !this._pinned;
+      this._applyPinState();
     };
+    document.getElementById('sbPin').addEventListener('click', (e) => { e.stopPropagation(); pinToggle(); });
+    document.getElementById('sbPin2').addEventListener('click', (e) => { e.stopPropagation(); pinToggle(); });
+  },
 
-    document.getElementById('sbToggle').addEventListener('click', (e) => {
-      e.stopPropagation();
-      toggle(!this._sidebarLocked);
-    });
-    document.getElementById('sbToggle2').addEventListener('click', (e) => {
-      e.stopPropagation();
-      toggle(false);
-    });
+  _applyPinState() {
+    const sb = this.el.sidebar;
+    if (this._pinned) {
+      sb.classList.add('pinned');
+    } else {
+      sb.classList.remove('pinned');
+    }
+    // Sync pin icon opacity
+    const pins = document.querySelectorAll('.sb-pin');
+    pins.forEach(p => p.classList.toggle('active', this._pinned));
   },
 
   // --- Accordions ---
@@ -140,18 +134,18 @@ RailBaron.UI = {
     this._wireSpeed();
     document.getElementById('restartBtn').addEventListener('click', () => {
       this.gs.reset();
-      RailBaron.Economy.initPrices(this.gs);
-      RailBaron.Economy.initStocks(this.gs);
+      RailBaron.Economy.init(this.gs);
       this.refreshSelectors();
       this.updateSidebar();
       document.querySelectorAll('.speed-btn').forEach(b => b.classList.remove('active'));
       const pauseBtn = document.querySelector('[data-speed="0"]');
       if (pauseBtn) pauseBtn.classList.add('active');
-      // Sync collapsed speed buttons
       document.querySelectorAll('.sb-collapsed .speed-btn').forEach(b => {
         b.classList.toggle('active', b.dataset.speed === '0');
       });
       this.gs.addLog('Nouvelle partie demarree.');
+      this._pinned = true;
+      this._applyPinState();
     });
     document.getElementById('themeBtn').addEventListener('click', () => {
       const root = document.documentElement;
@@ -215,23 +209,24 @@ RailBaron.UI = {
   // --- Sidebar refresh ---
   updateSidebar() {
     const gs = this.gs;
+    const C = RailBaron.CONFIG;
     this.el.cash.textContent       = RailBaron.money(gs.cash);
     this.el.profit.textContent     = RailBaron.money(gs.profit);
-    this.el.turn.textContent       = `${Math.min(gs.turn, RailBaron.CONFIG.MAX_TURNS)}/${RailBaron.CONFIG.MAX_TURNS}`;
+    this.el.turn.textContent       = `${String(gs.currentMonth).padStart(2,'0')}/${gs.currentYear}`;
     this.el.trainCount.textContent = gs.trains.length;
     this.el.selectedBadge.textContent = `Selection : ${gs.selectedNode ? gs.selectedNode.name : 'aucune'}`;
-    this.el.networkBadge.textContent  = `Voies : ${gs.edges.length}`;
+    this.el.networkBadge.textContent  = `Voies : ${gs.edges.length} | Dette : ${RailBaron.money(gs.totalDebt)}`;
+    const ecoLabel = C.ECONOMIC_STATES[gs.economicState] ? C.ECONOMIC_STATES[gs.economicState].label : '?';
     const speedLabels = { 0: 'Pause', 1: '1x', 2: '2x', 4: '4x' };
-    this.el.speedBadge.textContent = speedLabels[gs.speed] || 'Pause';
+    this.el.speedBadge.textContent = `${speedLabels[gs.speed] || 'Pause'} | ${ecoLabel}`;
 
-    // Mini cash dans la sidebar collapsed
     if (this.el.sbCash) {
       this.el.sbCash.textContent = RailBaron.money(gs.cash);
     }
 
-    const progressPct = gs.isFinished ? 100 : Math.min(100, (gs.monthTimer / RailBaron.CONFIG.MONTH_DURATION_MS) * 100);
+    const progressPct = gs.isFinished ? 100 : Math.min(100, (gs.monthTimer / C.MONTH_DURATION_MS) * 100);
     this.el.monthProgressFill.style.width = `${progressPct}%`;
-    this.el.monthProgressLabel.textContent = `Mois ${Math.min(gs.turn, RailBaron.CONFIG.MAX_TURNS)}/${RailBaron.CONFIG.MAX_TURNS}`;
+    this.el.monthProgressLabel.textContent = `${String(gs.currentMonth).padStart(2,'0')}/${gs.currentYear} (${gs.turn}/${gs.maxTurns})`;
 
     this._renderResourceList(gs);
     this._renderStationList(gs);

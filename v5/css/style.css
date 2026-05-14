@@ -82,7 +82,7 @@ option { color: #111; }
   z-index: 20;
   flex-shrink: 0;
 }
-.sidebar.expanded {
+.sidebar.pinned {
   width: var(--sb-expanded);
 }
 
@@ -97,7 +97,7 @@ option { color: #111; }
   height: 100%;
 }
 .sb-collapsed > * { flex-shrink: 0; }
-.sb-toggle {
+.sb-pin {
   width: 38px; height: 38px;
   border: 1px solid var(--color-divider);
   background: var(--color-surface-2);
@@ -105,7 +105,12 @@ option { color: #111; }
   font-size: var(--text-sm);
   display: flex; align-items: center; justify-content: center;
   margin-bottom: 4px;
+  cursor: pointer;
+  opacity: 0.5;
+  transition: opacity 0.15s;
 }
+.sb-pin:hover, .sb-pin.active { opacity: 1; color: var(--color-primary); }
+.sidebar.pinned .sb-collapsed .sb-pin { opacity: 1; color: var(--color-primary); }
 .sb-tools { display: flex; flex-direction: column; gap: 3px; }
 .sb-speed { display: flex; flex-direction: column; gap: 2px; margin-top: 8px; }
 .sb-btn {
@@ -151,8 +156,8 @@ option { color: #111; }
   overflow-y: auto;
   overflow-x: hidden;
 }
-.sidebar.expanded .sb-expanded { display: flex; }
-.sidebar.expanded .sb-collapsed { display: none; }
+.sidebar.pinned .sb-expanded { display: flex; }
+.sidebar.pinned .sb-collapsed { display: none; }
 
 .sb-brand {
   display: flex;
@@ -502,7 +507,7 @@ canvas {
     height: 100vh;
     z-index: 50;
   }
-  .sidebar.expanded { box-shadow: var(--shadow-md); }
+  .sidebar.pinned { box-shadow: var(--shadow-md); }
 }
 
 /* Tres petit : ajustements */
