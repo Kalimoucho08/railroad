@@ -110,7 +110,7 @@ RailBaron.Renderer = {
     ctx.strokeStyle = '#4a351b';
     ctx.strokeRect(x - 18, y + 14, 36, 14);
     stockItems.slice(0, 4).forEach(([r, v], i) => {
-      ctx.fillStyle = RailBaron.CONFIG.RESOURCES[r].color;
+      ctx.fillStyle = (RailBaron.CONFIG.CARGO[r] || RailBaron.CONFIG.RESOURCES[r] || {}).color || '#888';
       ctx.fillRect(x - 15 + i * 8, y + 17, 6, Math.min(8, 2 + v));
     });
   },
@@ -128,7 +128,8 @@ RailBaron.Renderer = {
     ctx.rotate(angle);
 
     for (let i = 0; i < train.wagons; i++) {
-      ctx.fillStyle = RailBaron.CONFIG.RESOURCES[train.resource].color;
+      const cargoDef = RailBaron.CONFIG.CARGO[train.resource] || RailBaron.CONFIG.RESOURCES[train.resource] || {};
+      ctx.fillStyle = cargoDef.color || '#888';
       ctx.fillRect(-18 - i * 11, -5, 9, 10);
       ctx.strokeStyle = '#111';
       ctx.strokeRect(-18 - i * 11, -5, 9, 10);

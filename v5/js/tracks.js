@@ -44,16 +44,58 @@ RailBaron.Tracks = {
     const a = gs.getNode(edge.a);
     const b = gs.getNode(edge.b);
     const list = new Set();
-    for (const r of a.produces) {
-      if (b.demands.includes(r) || (b.type === 'city' && r === 'passagers')) {
-        list.add(r);
-      }
+
+    // Ressources que A peut envoyer vers B
+    const aProduces = this._getProducesList(a);
+    const bAccepts = this._getAcceptsList(b);
+    for (const r of aProduces) {
+      if (bAccepts.has(r)) list.add(r);
     }
-    for (const r of b.produces) {
-      if (a.demands.includes(r) || (a.type === 'city' && r === 'passagers')) {
-        list.add(r);
-      }
+
+    // Ressources que B peut envoyer vers A
+    const bProduces = this._getProducesList(b);
+    const aAccepts = this._getAcceptsList(a);
+    for (const r of bProduces) {
+      if (aAccepts.has(r)) list.add(r);
     }
+
     return [...list];
+  },
+
+  // Types de cargo produits par un noeud
+  _getProducesList(node) {
+    const list = [];
+    if (node.type === 'city') {
+      list.push('passengers', 'mail');
+    } else if (node.type === 'producer' && node.produces) {
+      list.push(node.produces);
+    } else if (node.produces) {
+      list.push(node.produces);
+    }
+    return list;
+  },
+
+  // Types de cargo acceptes par un noeud (demande)
+  _getAcceptsList(node) {
+    const accepts = new Set();
+    if (node.type === 'city') {
+      // Les villes acceptent tous les biens transformes
+      for (const r of ['goods', 'food', 'steel', 'textiles', 'petroleum']) accepts.add(r);
+      // Plus les cargos specifies
+      if (node.consumes) for (const c of node.consumes) accepts.add(c);
+    } else if (node.consumes) {
+      // Les industries acceptent leurs inputs specifies
+      for (const c of node.consumes) accepts.add(c);
+    }
+    // On accepte aussi les ressources qu'on produit (pour stockage/revente)
+    if (node.type === 'city') {
+      accepts.add('passengers');
+      accepts.add('mail');
+    } else if (node.type === 'producer' && node.produces) {
+      accepts.add(node.produces);
+    } else if (node.produces) {
+      accepts.add(node.produces);
+    }
+    return accepts;
   }
 };

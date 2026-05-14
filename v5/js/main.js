@@ -1,4 +1,4 @@
-/* main.js — Boucle principale V4 avec camera, resize, overlays */
+/* main.js — Boucle principale V5 avec camera, resize, overlays */
 RailBaron.Main = {
   init() {
     const canvas = document.getElementById('gameCanvas');
@@ -9,22 +9,18 @@ RailBaron.Main = {
     this.gs = new RailBaron.GameState();
     this.camera = RailBaron.Camera;
 
-    RailBaron.Economy.initPrices(this.gs);
-    RailBaron.Economy.initStocks(this.gs);
+    RailBaron.Economy.init(this.gs);
 
-    // Ajuster le canvas et la camera a la taille du conteneur
     this._resizeCanvas();
     window.addEventListener('resize', () => this._resizeCanvas());
 
-    // Input gere les interactions carte (pan, zoom, hover)
     RailBaron.Input.init(this.gs, this.camera, canvas, RailBaron.Renderer);
-
-    // UI gere la sidebar et les clicks de jeu
     RailBaron.UI.init(this.gs, RailBaron.Renderer, this.camera);
 
-    this.gs.addLog('Compagnie creee. Construis des lignes puis affecte des convois.');
-    this.gs.addLog('Astuce : relie une production a une ville ou une industrie, puis achete un convoi dedie.');
-    this.gs.addLog('Molette pour zoomer, glisser pour deplacer la carte.');
+    this.gs.addLog('Compagnie creee. Capital : ' + RailBaron.money(RailBaron.CONFIG.STARTING_CAPITAL) + '.');
+    this.gs.addLog('Relie producteurs, industries et villes. Achete des convois dedies.');
+    this.gs.addLog('Construis des stations (Depot/Gare/Terminal) pour capter les flux.');
+    this.gs.addLog('Molette = zoom. Glisser = deplacer. Clic train = fiche.');
 
     this._lastTimestamp = 0;
     this.loop(0);

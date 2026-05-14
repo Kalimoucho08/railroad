@@ -5,8 +5,8 @@ RailBaron.GameState = class {
 
   reset() {
     const C = RailBaron.CONFIG;
-    this.cash = C.STARTING_CASH;
-    this.startCash = C.STARTING_CASH;
+    this.cash = C.STARTING_CAPITAL;
+    this.startCash = C.STARTING_CAPITAL;
     this.turn = 1;
     this.tool = 'rail';
     this.speed = 0;
@@ -15,16 +15,19 @@ RailBaron.GameState = class {
     this.hoveredNode = null;
     this.edges = [];
     this.trains = [];
-    this.prices = {};
     this.stocks = {};
     this.log = [];
     this._nextEdgeId = 0;
     this._nextTrainId = 0;
   }
 
-  get profit() { return this.cash - this.startCash; }
+  get currentYear()  { return RailBaron.CONFIG.START_YEAR + Math.floor((this.turn - 1) / 12); }
+  get currentMonth() { return ((this.turn - 1) % 12) + 1; }
+  get maxTurns()    { return RailBaron.CONFIG.MAX_GAME_YEARS * 12; }
+  get profit()      { return this.cash - this.startCash; }
+  get totalDebt()   { return this.loans ? this.loans.reduce((s, l) => s + l.amount, 0) : 0; }
 
-  get isFinished() { return this.turn > RailBaron.CONFIG.MAX_TURNS; }
+  get isFinished() { return this.turn > this.maxTurns; }
 
   addLog(msg) {
     this.log.unshift(msg);

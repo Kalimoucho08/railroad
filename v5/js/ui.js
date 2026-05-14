@@ -241,12 +241,11 @@ RailBaron.UI = {
 
   _renderResourceList(gs) {
     const C = RailBaron.CONFIG;
-    this.el.resourceList.innerHTML = Object.entries(C.RESOURCES).map(([k, v]) => {
-      const price = gs.prices[k];
-      const cls = price > v.base ? 'good' : 'mini';
+    this.el.resourceList.innerHTML = Object.entries(C.CARGO).map(([k, v]) => {
+      const clsDef = C.CARGO_CLASSES[v.class];
       return `<div class="res-row">
-        <div><strong>${v.label}</strong><div class="mini">Base ${RailBaron.money(v.base)}</div></div>
-        <div class="${cls}">${RailBaron.money(price)}</div>
+        <div><strong>${v.label}</strong><div class="mini">${clsDef ? clsDef.label : ''} — taux ${RailBaron.money(v.baseRate)}</div></div>
+        <div>${v.perishable ? 'Pér.' : ''}</div>
       </div>`;
     }).join('');
   },
@@ -257,7 +256,7 @@ RailBaron.UI = {
       const visible = Object.entries(gs.stocks[n.name])
         .filter(([, v]) => v > 0)
         .slice(0, 3)
-        .map(([r, v]) => `${C.RESOURCES[r].label}:${v}`)
+        .map(([r, v]) => `${(C.CARGO[r] || C.RESOURCES[r] || {}).label || r}:${v}`)
         .join(' · ') || 'Aucun stock';
       return `<div class="st-row">
         <div><strong>${n.name}</strong><div class="mini">${visible}</div></div>
@@ -270,7 +269,7 @@ RailBaron.UI = {
     this.el.trainList.innerHTML = gs.trains.length
       ? gs.trains.map(t => `<div class="tr-row">
           <div>
-            <strong>${RailBaron.CONFIG.RESOURCES[t.resource].label}</strong>
+            <strong>${(RailBaron.CONFIG.CARGO[t.resource] || RailBaron.CONFIG.RESOURCES[t.resource] || {}).label || t.resource}</strong>
             ${t.from} → ${t.to}
             <div class="mini">${t.wagons}/${t.maxWagons} wagons · ${t.state} · profit ${RailBaron.money(t.lifetimeProfit)}</div>
           </div>
@@ -301,7 +300,7 @@ RailBaron.UI = {
     }
     const opts = RailBaron.Tracks.getSuitableResources(edge, gs);
     this.el.resourceSelect.innerHTML = opts.length
-      ? opts.map(r => `<option value="${r}">${RailBaron.CONFIG.RESOURCES[r].label}</option>`).join('')
+      ? opts.map(r => `<option value="${r}">${(RailBaron.CONFIG.CARGO[r] || RailBaron.CONFIG.RESOURCES[r] || {}).label || r}</option>`).join('')
       : '<option value="">Aucune marchandise adaptee</option>';
   }
 };
