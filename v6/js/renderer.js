@@ -227,11 +227,15 @@ RailBaron.Renderer = {
   getTrainAt(wx, wy, gs) {
     const HIT = 16;
     for (const train of gs.trains) {
-      const from = gs.getNode(train.from);
-      const to = gs.getNode(train.to);
+      const route = gs.routes.find(r => r.id === train.routeId);
+      if (!route) continue;
+      const curNode = gs.getNode(route.stops[train.currentStopIndex]);
+      const nextIdx = train.currentStopIndex + train.direction;
+      if (nextIdx < 0 || nextIdx >= route.stops.length) continue;
+      const nextNode = gs.getNode(route.stops[nextIdx]);
       const p = train.progress;
-      const tx = from.x + (to.x - from.x) * p;
-      const ty = from.y + (to.y - from.y) * p;
+      const tx = curNode.x + (nextNode.x - curNode.x) * p;
+      const ty = curNode.y + (nextNode.y - curNode.y) * p;
       if (Math.abs(wx - tx) < HIT && Math.abs(wy - ty) < HIT) {
         return train;
       }

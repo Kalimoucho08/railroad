@@ -162,9 +162,11 @@ RailBaron.Economy = {
     const trainSnaps = [];
     for (const t of gs.trains) {
       totalRevenue += t.monthlyRevenue;
+      const route = gs.routes.find(r => r.id === t.routeId);
       trainSnaps.push({
-        id: t.id, resource: t.resource, from: t.from, to: t.to,
-        revenue: t.monthlyRevenue, deliveries: t.deliveriesThisMonth || 0, status: t.status
+        id: t.id, routeName: route ? route.name : '?',
+        consist: t.consist, revenue: t.monthlyRevenue,
+        deliveries: t.deliveriesThisMonth || 0, status: t.status
       });
       t.monthlyRevenue = 0;
       t.deliveriesThisMonth = 0;

@@ -151,21 +151,18 @@ RailBaron.Overlays = {
       body += `<div class="tt-row"><strong>Net</strong><span><strong>${RailBaron.money(current.net)}</strong></span></div>`;
     } else { body += '<p class="mini">En attente du premier mois...</p>'; }
 
-    // Par ligne (agrege depuis les trains du snapshot)
+    // Par route (agrege depuis les trains du snapshot)
     if (current && current.trains.length) {
-      body += '<h3 style="margin:10px 0 6px">Par ligne (mois)</h3>';
-      const byEdge = {};
+      body += '<h3 style="margin:10px 0 6px">Par route (mois)</h3>';
+      const byRoute = {};
       for (const ts of current.trains) {
-        const train = gs.trains.find(t => t.id === ts.id);
-        const key = train ? `${train.from} ↔ ${train.to}` : ts.id;
-        if (!byEdge[key]) byEdge[key] = { revenue: 0, deliveries: 0, resources: new Set() };
-        byEdge[key].revenue += ts.revenue;
-        byEdge[key].deliveries += ts.deliveries;
-        if (train) byEdge[key].resources.add(train.cargoLabel || train.resource);
+        const key = ts.routeName || ts.id;
+        if (!byRoute[key]) byRoute[key] = { revenue: 0, deliveries: 0 };
+        byRoute[key].revenue += ts.revenue;
+        byRoute[key].deliveries += ts.deliveries;
       }
-      for (const [key, data] of Object.entries(byEdge)) {
-        const resList = [...data.resources].join(', ');
-        body += `<div class="tt-row"><span>${key} <span class="mini">(${resList})</span></span><span>${RailBaron.money(data.revenue)} (${data.deliveries} liv.)</span></div>`;
+      for (const [key, data] of Object.entries(byRoute)) {
+        body += `<div class="tt-row"><span>${key}</span><span>${RailBaron.money(data.revenue)} (${data.deliveries} liv.)</span></div>`;
       }
     }
 
@@ -175,7 +172,11 @@ RailBaron.Overlays = {
       for (const t of gs.trains) {
         const stLabels = { active: '', paused: '[PAUSE]', on_demand: '[DEM.]' };
         const st = stLabels[t.status] || '';
-        body += `<div class="tt-row"><span>${t.id} ${st} ${t.cargoLabel || t.resource} ${t.from}→${t.to}</span><span>${RailBaron.money(t.monthlyRevenue)} | vie: ${RailBaron.money(t.lifetimeProfit)} | ${t.wagons}/${t.maxWagons} wag.</span></div>`;
+        const route = gs.routes.find(r => r.id === t.routeId);
+        const rtName = route ? route.name : '?';
+        const consistStr = t.consist ? Object.entries(t.consist).map(([r, n]) => `${n}x${(RailBaron.CONFIG.CARGO[r] || {}).label || r}`).join(', ') : '';
+        body += `<div class="tt-row"><span>${t.id} ${st} ${consistStr}</span><span>${RailBaron.money(t.monthlyRevenue)} | vie: ${RailBaron.money(t.lifetimeProfit)}</span></div>`;
+        body += `<div class="mini">Route: ${rtName}</div>`;
       }
     } else { body += '<p class="mini">Aucun train.</p>'; }
 
