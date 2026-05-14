@@ -13,7 +13,7 @@ RailBaron.Overlays = {
   },
 
   // --- Tooltip survol noeud ---
-  showNodeTooltip(node, gs, screenPos, canvas) {
+  showNodeTooltip(node, gs, screenPos, cssX, cssY) {
     const C = RailBaron.CONFIG;
     const stocks = gs.stocks[node.name];
     const stocked = Object.entries(stocks).filter(([,v]) => v > 0);
@@ -38,12 +38,14 @@ RailBaron.Overlays = {
     this._tooltip.innerHTML = html;
     this._tooltip.style.display = 'block';
 
-    // Position : a cote du curseur, ajuste pour rester dans le canvas
-    const r = canvas.getBoundingClientRect();
-    let left = screenPos.x + 16;
-    let top = screenPos.y + 12;
-    if (left + 240 > r.width) left = screenPos.x - 250;
-    if (top + 120 > r.height) top = screenPos.y - 130;
+    // Position en CSS pixels dans l'overlay layer
+    let left = cssX + 16;
+    let top = cssY + 12;
+    const layer = document.getElementById('overlayLayer');
+    const maxW = layer.clientWidth;
+    const maxH = layer.clientHeight;
+    if (left + 240 > maxW) left = cssX - 250;
+    if (top + 120 > maxH) top = cssY - 130;
     this._tooltip.style.left = left + 'px';
     this._tooltip.style.top = top + 'px';
   },

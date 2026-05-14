@@ -5,6 +5,7 @@ RailBaron.Input = {
 
   // Etat interne
   _dragging: false,
+  _dragMoved: false,
   _dragStart: null,
   _dragCamStart: null,
   _lastWheelTime: 0,
@@ -30,7 +31,9 @@ RailBaron.Input = {
     const r = this.canvas.getBoundingClientRect();
     return {
       x: (e.clientX - r.left) * this.canvas.width / r.width,
-      y: (e.clientY - r.top) * this.canvas.height / r.height
+      y: (e.clientY - r.top) * this.canvas.height / r.height,
+      cssX: e.clientX - r.left,
+      cssY: e.clientY - r.top
     };
   },
 
@@ -58,6 +61,7 @@ RailBaron.Input = {
     // Sinon, debut drag pan (bouton gauche ou milieu)
     if (e.button === 0 || e.button === 1) {
       this._dragging = true;
+      this._dragMoved = false;
       this._dragStart = { x: e.clientX, y: e.clientY };
       this._dragCamStart = { x: this.camera.x, y: this.camera.y };
       this.canvas.style.cursor = 'grabbing';
@@ -71,6 +75,7 @@ RailBaron.Input = {
     if (this._dragging) {
       const dx = e.clientX - this._dragStart.x;
       const dy = e.clientY - this._dragStart.y;
+      if (Math.abs(dx) > 3 || Math.abs(dy) > 3) this._dragMoved = true;
       this.camera.x = this._dragCamStart.x + dx;
       this.camera.y = this._dragCamStart.y + dy;
       return;
@@ -82,9 +87,10 @@ RailBaron.Input = {
 
     if (hoverNode) {
       this.canvas.style.cursor = 'pointer';
-      if (RailBaron.Overlays) RailBaron.Overlays.showNodeTooltip(hoverNode, this.gs, pos, this.canvas);
+      if (RailBaron.Overlays) RailBaron.Overlays.showNodeTooltip(hoverNode, this.gs, pos, pos.cssX, pos.cssY);
     } else if (hoverTrain) {
       this.canvas.style.cursor = 'pointer';
+      if (RailBaron.Overlays) RailBaron.Overlays.hideTooltip();
     } else {
       this.canvas.style.cursor = this._dragging ? 'grabbing' : 'default';
       if (RailBaron.Overlays) RailBaron.Overlays.hideTooltip();
@@ -116,10 +122,18 @@ RailBaron.Input = {
         if (RailBaron.Overlays) RailBaron.Overlays.closeDetail();
         if (RailBaron.UI) RailBaron.UI.updateSidebar();
         break;
-      case '0': this.gs.speed = 0; break;
-      case '1': this.gs.speed = 1; break;
-      case '2': this.gs.speed = 2; break;
-      case '3': this.gs.speed = 4; break;
+      case '0': this._setSpeed(0); break;
+      case '1': this._setSpeed(1); break;
+      case '2': this._setSpeed(2); break;
+      case '3': this._setSpeed(4); break;
     }
+  },
+
+  _setSpeed(val) {
+    this.gs.speed = val;
+    const v = String(val);
+    document.querySelectorAll('.speed-btn').forEach(b => {
+      b.classList.toggle('active', b.dataset.speed === v);
+    });
   }
 };

@@ -109,7 +109,10 @@ RailBaron.UI = {
     const canvas = this.el.canvas;
     canvas.addEventListener('click', (e) => {
       // Ignorer si on vient de finir un drag (pan)
-      if (RailBaron.Input._dragging) return;
+      if (RailBaron.Input._dragMoved) {
+        RailBaron.Input._dragMoved = false;
+        return;
+      }
 
       const pos = RailBaron.Input.canvasPos(e);
       const world = this.camera.screenToWorld(pos.x, pos.y);
