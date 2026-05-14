@@ -1,7 +1,6 @@
-/* trains.js — V7 : routes multi-arrets, consist multi-ressources, debug logs */
+/* trains.js — V7 : routes multi-arrets, consist multi-ressources */
 RailBaron.Trains = {
 
-  // --- Achat ---
   spawn(gs, routeId, consist, stopsAt) {
     const route = gs.routes.find(r => r.id === routeId);
     if (!route) { gs.addLog('Route introuvable.'); return null; }
@@ -26,7 +25,6 @@ RailBaron.Trains = {
     gs.trains.push(train);
 
     const cargoList = Object.entries(consist).map(([r, n]) => `${n}x${(C.CARGO[r] || {}).label || r}`).join(', ');
-    console.log(`[${train.id}] 🆕 SPAWN: ${cargoList} sur ${route.name} (${route.stops.length} stops)`);
     gs.addLog(`Convoi ${train.id} : ${cargoList} sur ${route.name} (${RailBaron.money(cost)}).`);
     return train;
   },
@@ -52,16 +50,14 @@ RailBaron.Trains = {
     return true;
   },
 
-  // --- Boucle principale ---
   update(gs) {
     for (const train of gs.trains) {
       if (train.status === 'paused') continue;
       const route = gs.routes.find(r => r.id === train.routeId);
-      if (!route) { console.warn(`[${train.id}] ROUTE INTROUVABLE: ${train.routeId}`); continue; }
-
+      if (!route) continue;
       switch (train.state) {
         case 'loading':   this._stepLoading(train, route, gs);   break;
-        case 'moving':    this._stepMoving(train, route, gs);    break;
+        case 'moving':    this._stepMoving(train, route);         break;
         case 'unloading': this._stepUnloading(train, route, gs); break;
       }
     }
@@ -88,15 +84,11 @@ RailBaron.Trains = {
 
     if (!train.stopsAt[train.currentStopIndex]) {
       train.state = 'moving'; train.timer = 0; train.progress = 0;
-      console.log(`[${train.id}] ⏭ SKIP loading at ${nodeName} (not served) → moving`);
       return;
     }
 
-    const speedMul = Math.max(1, gs.speed);
-    train.timer += C.TICK_MS * speedMul;
+    train.timer += C.TICK_MS * Math.max(1, gs.speed);
 
-    // Charger chaque type du consist
-    let loadedThisTick = false;
     for (const [r, maxW] of Object.entries(train.consist)) {
       const current = train.wagonsLoaded[r] || 0;
       const stock = stocks[r] || 0;
@@ -104,46 +96,32 @@ RailBaron.Trains = {
         train.wagonsLoaded[r] = current + 1;
         stocks[r]--;
         train.timer = 0;
-        console.log(`[${train.id}] 📦 LOAD ${r} at ${nodeName}: ${current}→${current+1}/${maxW} (stock: ${stock-1}, timer: ${train.timer.toFixed(0)}/${C.LOAD_TIME})`);
-        loadedThisTick = true;
         break;
       }
     }
 
-    // Decision de depart
     const totalLoaded = Object.values(train.wagonsLoaded).reduce((a, b) => (a || 0) + (b || 0), 0);
     const canLoadMore = Object.entries(train.consist).some(([r, maxW]) => {
       return (train.wagonsLoaded[r] || 0) < maxW && (stocks[r] || 0) > 0;
     });
 
-    console.log(`[${train.id}] ⏳ LOADING at ${nodeName} | timer=${train.timer.toFixed(0)}/${C.LOAD_TIME} | loaded=${totalLoaded} canMore=${canLoadMore} speedMul=${speedMul} | wagons=${JSON.stringify(train.wagonsLoaded)} stocks=${JSON.stringify(Object.fromEntries(Object.entries(train.consist).map(([r])=>[r,stocks[r]||0])))}`);
-
     if (totalLoaded > 0 && (!canLoadMore || train.status === 'on_demand')) {
-      const nextIdx = this._nextIndex(train, route);
-      train.state = 'moving'; train.progress = 0; train.timer = 0; train._stuckCycles = 0;
-      console.log(`[${train.id}] ▶ DEPART ${nodeName} → ${route.stops[nextIdx]} (${totalLoaded} wagons, direction: ${train.direction > 0 ? '→' : '←'})`);
+      train.state = 'moving'; train.progress = 0; train.timer = 0;
     } else if (totalLoaded === 0 && !canLoadMore) {
-      const nextIdx = this._nextIndex(train, route);
-      train.state = 'moving'; train.progress = 0; train.timer = 0; train._stuckCycles = 0;
-      console.log(`[${train.id}] → VIDE, continue ${nodeName} → ${route.stops[nextIdx]}`);
-    } else {
-      if (!loadedThisTick && train.timer < C.LOAD_TIME) {
-        // Silencieux — le timer tourne
-      }
+      train.state = 'moving'; train.progress = 0; train.timer = 0;
     }
   },
 
   // === MOVING ===
-  _stepMoving(train, route, gs) {
+  _stepMoving(train, route) {
     const C = RailBaron.CONFIG;
     const curNode = this._currentNode(train, route);
     if (!curNode || train.currentStopIndex >= route.stops.length) {
-      console.warn(`[${train.id}] INVALID stop index ${train.currentStopIndex} (route has ${route.stops.length} stops)`);
       train.currentStopIndex = 0; train.state = 'loading'; return;
     }
     const nextIdx = this._nextIndex(train, route);
     const nextNode = RailBaron.findNode(route.stops[nextIdx]);
-    if (!nextNode) { console.warn(`[${train.id}] NEXT NODE NOT FOUND: ${route.stops[nextIdx]}`); train.state = 'loading'; return; }
+    if (!nextNode) { train.state = 'loading'; return; }
     const dist = RailBaron.dist(curNode, nextNode);
 
     const segmentTime = dist / (train.speed * 1000);
@@ -155,7 +133,6 @@ RailBaron.Trains = {
       train.currentStopIndex = nextIdx;
       train.state = 'unloading';
       train.timer = 0;
-      console.log(`[${train.id}] 🚂 ARRIVE at ${route.stops[train.currentStopIndex]} (from ${curNode.name}) → unloading`);
     }
   },
 
@@ -168,14 +145,10 @@ RailBaron.Trains = {
 
     if (!train.stopsAt[train.currentStopIndex]) {
       train.state = 'loading'; train.timer = 0;
-      console.log(`[${train.id}] ⏭ SKIP unloading at ${nodeName} (not served) → loading`);
       return;
     }
 
-    const speedMul = Math.max(1, gs.speed);
-    train.timer += C.TICK_MS * speedMul;
-
-    console.log(`[${train.id}] 📥 UNLOADING at ${nodeName} | timer=${train.timer.toFixed(0)}/${C.UNLOAD_TIME} | accepts=[${[...accepts].join(',')}] | onBoard=${JSON.stringify(train.wagonsLoaded)}`);
+    train.timer += C.TICK_MS * Math.max(1, gs.speed);
 
     for (const [r, loaded] of Object.entries(train.wagonsLoaded)) {
       if (loaded > 0 && accepts.has(r) && train.timer > C.UNLOAD_TIME) {
@@ -189,7 +162,6 @@ RailBaron.Trains = {
         const gain = RailBaron.Economy.revenuePerDelivery(r, fromNode, node, train.trainType, gs);
         train.monthlyRevenue += gain;
         train.lifetimeProfit += gain;
-        console.log(`[${train.id}] 💰 UNLOAD ${r} at ${nodeName}: +${RailBaron.money(gain)} (from ${fromNodeName}, remaining: ${train.wagonsLoaded[r]})`);
         break;
       }
     }
@@ -197,13 +169,10 @@ RailBaron.Trains = {
     const allEmpty = Object.values(train.wagonsLoaded).every(v => (v || 0) === 0);
     if (allEmpty) {
       train.state = 'loading'; train.timer = 0;
-      console.log(`[${train.id}] ✓ EMPTY at ${nodeName} → loading`);
     } else {
-      // Cargo a bord mais cette gare ne l'accepte pas → ne pas bloquer
       const canUnloadAny = Object.entries(train.wagonsLoaded).some(([r, loaded]) => loaded > 0 && accepts.has(r));
       if (!canUnloadAny && train.timer > C.UNLOAD_TIME * 2) {
         train.state = 'loading'; train.timer = 0;
-        console.log(`[${train.id}] ⚠ ${nodeName} n'accepte pas [${Object.entries(train.wagonsLoaded).filter(([,v])=>v>0).map(([r])=>r).join(',')}] → skip unloading`);
       }
     }
   }
