@@ -217,7 +217,13 @@ RailBaron.UI = {
     const stops = this.gs._buildingRoute || [];
     // Eviter doublon consecutif
     if (stops.length > 0 && stops[stops.length - 1] === node.name) return;
-    // Eviter deja present (sauf pour boucler)
+
+    // Verifier qu'un chemin existe depuis le dernier stop
+    if (stops.length > 0 && !RailBaron.Routes.hasPath(this.gs, stops[stops.length - 1], node.name)) {
+      this.gs.addLog(`Aucun chemin entre ${stops[stops.length - 1]} et ${node.name}.`);
+      return;
+    }
+
     stops.push(node.name);
     this.gs._buildingRoute = stops;
     const btn = document.getElementById('finishRouteBtn');

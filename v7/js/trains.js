@@ -123,25 +123,20 @@ RailBaron.Trains = {
       }
     }
 
-    // Verifier si on doit partir
-    const allFull = Object.entries(train.consist).every(([r, maxW]) => (train.wagonsLoaded[r] || 0) >= maxW);
-    const allEmpty = Object.values(train.wagonsLoaded).every(v => (v || 0) === 0);
-    const stockDry = Object.entries(train.consist).every(([r, maxW]) => {
-      return (train.wagonsLoaded[r] || 0) >= maxW || (stocks[r] || 0) === 0;
+    // Le train part des qu'il a au moins un wagon charge.
+    // Il ne peut pas charger plus si : soit le wagon est plein, soit le stock est vide.
+    const totalLoaded = Object.values(train.wagonsLoaded).reduce((a, b) => (a || 0) + (b || 0), 0);
+    const canLoadMore = Object.entries(train.consist).some(([r, maxW]) => {
+      return (train.wagonsLoaded[r] || 0) < maxW && (stocks[r] || 0) > 0;
     });
 
-    // Timeout si bloquee trop longtemps sans stock → demi-tour
+    // Timeout si aucun stock dispo → demi-tour rapide
     const stuckCycles = train._stuckCycles || 0;
-    const isStuck = allEmpty && stockDry;
-
-    const shouldDepart = allFull || (stockDry && !allEmpty) ||
-      (!allEmpty && train.status === 'on_demand');
-
-    if (shouldDepart && !allEmpty) {
+    if (totalLoaded > 0 && (!canLoadMore || train.status === 'on_demand')) {
       train.state = 'moving'; train.progress = 0; train.timer = 0; train._stuckCycles = 0;
-    } else if (isStuck) {
+    } else if (totalLoaded === 0 && !canLoadMore) {
       train._stuckCycles = stuckCycles + 1;
-      if (train._stuckCycles > 5) {
+      if (train._stuckCycles > 2) {
         train.direction *= -1;
         train.state = 'moving'; train.progress = 0; train.timer = 0; train._stuckCycles = 0;
       }

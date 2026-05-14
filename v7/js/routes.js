@@ -1,16 +1,35 @@
 /* routes.js — V6 : itineraires multi-arrets */
 RailBaron.Routes = {
 
-  // Cree une route si chaque paire consecutive a une voie directe
+  // Verifie qu'un chemin existe entre deux noeuds via les edges
+  hasPath(gs, fromName, toName) {
+    if (gs.edgeExists(fromName, toName)) return true;
+    // BFS simple
+    const visited = new Set([fromName]);
+    const queue = [fromName];
+    while (queue.length) {
+      const cur = queue.shift();
+      for (const e of gs.edges) {
+        const neighbor = e.a === cur ? e.b : e.b === cur ? e.a : null;
+        if (neighbor && !visited.has(neighbor)) {
+          if (neighbor === toName) return true;
+          visited.add(neighbor);
+          queue.push(neighbor);
+        }
+      }
+    }
+    return false;
+  },
+
+  // Cree une route si chaque paire consecutive est connectee (via un chemin d'edges)
   create(gs, stopNames) {
     if (!stopNames || stopNames.length < 2) {
       gs.addLog('Une route doit avoir au moins 2 arrets.');
       return null;
     }
-    // Verifier que chaque paire consecutive a un edge
     for (let i = 0; i < stopNames.length - 1; i++) {
-      if (!gs.edgeExists(stopNames[i], stopNames[i + 1])) {
-        gs.addLog(`Pas de voie entre ${stopNames[i]} et ${stopNames[i + 1]}. Construisez-la d'abord.`);
+      if (!this.hasPath(gs, stopNames[i], stopNames[i + 1])) {
+        gs.addLog(`Aucun chemin entre ${stopNames[i]} et ${stopNames[i + 1]}. Construisez des voies.`);
         return null;
       }
     }
