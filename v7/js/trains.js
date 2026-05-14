@@ -66,9 +66,9 @@ RailBaron.Trains = {
   // --- Boucle principale ---
   update(gs) {
     for (const train of gs.trains) {
-      if (train.status === 'paused') continue;
+      if (train.status === 'paused') { /* console.debug(train.id, 'paused'); */ continue; }
       const route = gs.routes.find(r => r.id === train.routeId);
-      if (!route) continue;
+      if (!route) { console.warn(train.id, 'route introuvable', train.routeId); continue; }
 
       switch (train.state) {
         case 'loading':   this._stepLoading(train, route, gs);   break;
@@ -123,22 +123,36 @@ RailBaron.Trains = {
       }
     }
 
-    // Le train part des qu'il a au moins un wagon charge.
-    // Il ne peut pas charger plus si : soit le wagon est plein, soit le stock est vide.
+    // ~~~ DEBUG ~~~
     const totalLoaded = Object.values(train.wagonsLoaded).reduce((a, b) => (a || 0) + (b || 0), 0);
     const canLoadMore = Object.entries(train.consist).some(([r, maxW]) => {
       return (train.wagonsLoaded[r] || 0) < maxW && (stocks[r] || 0) > 0;
     });
 
-    // Timeout si aucun stock dispo → demi-tour rapide
+    // Log decision
+    const consistSummary = Object.entries(train.consist).map(([r, maxW]) => {
+      const cur = train.wagonsLoaded[r] || 0;
+      const stk = stocks[r] || 0;
+      const full = cur >= maxW ? 'FULL' : `${cur}/${maxW}`;
+      return `${r}:${full}(stock:${stk})`;
+    }).join(' ');
+    const reason = totalLoaded === 0 && !canLoadMore ? 'STUCK' :
+                   totalLoaded > 0 && !canLoadMore ? 'DEPART(cant load more)' :
+                   totalLoaded > 0 && train.status === 'on_demand' ? 'DEPART(on_demand)' :
+                   'WAITING(can still load)';
+
+    console.log(`[${train.id}] ${nodeName} | ${consistSummary} | loaded=${totalLoaded} canMore=${canLoadMore} stuck=${train._stuckCycles||0} | → ${reason}`);
+
     const stuckCycles = train._stuckCycles || 0;
     if (totalLoaded > 0 && (!canLoadMore || train.status === 'on_demand')) {
       train.state = 'moving'; train.progress = 0; train.timer = 0; train._stuckCycles = 0;
+      console.log(`[${train.id}] ▶ DEPART vers ${route.stops[this._nextIndex(train, route)]}`);
     } else if (totalLoaded === 0 && !canLoadMore) {
       train._stuckCycles = stuckCycles + 1;
       if (train._stuckCycles > 2) {
         train.direction *= -1;
         train.state = 'moving'; train.progress = 0; train.timer = 0; train._stuckCycles = 0;
+        console.log(`[${train.id}] ↩ DEMI-TOUR (stuck ${train._stuckCycles}x)`);
       }
     } else {
       train._stuckCycles = 0;
@@ -196,7 +210,8 @@ RailBaron.Trains = {
         const gain = RailBaron.Economy.revenuePerDelivery(r, fromNode, node, train.trainType, gs);
         train.monthlyRevenue += gain;
         train.lifetimeProfit += gain;
-        break; // un wagon a la fois
+        console.log(`[${train.id}] 💰 Decharge ${r} a ${nodeName}: +${RailBaron.money(gain)}`);
+        break;
       }
     }
 
@@ -204,6 +219,7 @@ RailBaron.Trains = {
     const allEmpty = Object.values(train.wagonsLoaded).every(v => (v || 0) === 0);
     if (allEmpty) {
       train.state = 'loading'; train.timer = 0;
+      console.log(`[${train.id}] ✓ DECHARGE TERMINE a ${nodeName} → loading`);
     }
   }
 };
