@@ -57,17 +57,18 @@ RailBaron.Renderer = {
   _drawTerrain(gs, ctx) {
     const C = RailBaron.CONFIG;
 
-    // Forets (cercles verts avec texture)
-    for (const f of C.FORESTS) {
+    // Forets (cercles verts avec arbres deterministes)
+    for (let fi = 0; fi < C.FORESTS.length; fi++) {
+      const f = C.FORESTS[fi];
       ctx.fillStyle = '#1a4a1a';
       ctx.globalAlpha = 0.3;
       ctx.beginPath(); ctx.arc(f.x, f.y, f.r, 0, Math.PI*2); ctx.fill();
-      // Petits arbres
       ctx.fillStyle = '#0d3d0d';
       ctx.globalAlpha = 0.5;
       for (let i = 0; i < 8; i++) {
-        const angle = (i / 8) * Math.PI * 2 + Math.random() * 0.3;
-        const dist = f.r * (0.3 + Math.random() * 0.6);
+        const seed = fi * 100 + i;
+        const angle = ((seed * 7) % 100) / 100 * Math.PI * 2;
+        const dist = f.r * (0.3 + ((seed * 13) % 100) / 100 * 0.6);
         const tx = f.x + Math.cos(angle) * dist;
         const ty = f.y + Math.sin(angle) * dist;
         ctx.beginPath();
@@ -80,17 +81,19 @@ RailBaron.Renderer = {
     }
     ctx.globalAlpha = 1.0;
 
-    // Montagnes (triangles gris-brun)
-    for (const m of C.MOUNTAINS) {
+    // Montagnes (triangles deterministes)
+    for (let mi = 0; mi < C.MOUNTAINS.length; mi++) {
+      const m = C.MOUNTAINS[mi];
       ctx.fillStyle = '#6b5b4a';
       ctx.globalAlpha = 0.4;
       ctx.beginPath(); ctx.arc(m.x, m.y, m.r, 0, Math.PI*2); ctx.fill();
       ctx.fillStyle = '#5a4a3a';
       ctx.globalAlpha = 0.6;
-      for (let i = 0; i < 5; i++) {
-        const mx = m.x + (Math.random() - 0.5) * m.r * 1.2;
-        const my = m.y + (Math.random() - 0.5) * m.r * 1.2;
-        const s = 8 + Math.random() * 12;
+      for (let i = 0; i < 6; i++) {
+        const seed = mi * 100 + i;
+        const mx = m.x + (((seed * 17) % 100) / 100 - 0.5) * m.r * 1.2;
+        const my = m.y + (((seed * 23) % 100) / 100 - 0.5) * m.r * 1.2;
+        const s = 8 + ((seed * 31) % 100) / 100 * 12;
         ctx.beginPath();
         ctx.moveTo(mx - s, my + s*0.6);
         ctx.lineTo(mx, my - s*0.8);
