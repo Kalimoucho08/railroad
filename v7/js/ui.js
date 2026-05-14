@@ -408,10 +408,11 @@ RailBaron.UI = {
       const stLabels = { active: '', paused: 'PAUSE', on_demand: 'DEM.' };
       const st = stLabels[t.status] || '';
       const curStop = route ? route.stops[t.currentStopIndex] : '?';
+      const age = Math.floor(Math.max(0, (gs.turn - (t.builtTurn || gs.turn)) / 12));
       return `<div class="tr-row" data-train="${t.id}">
         <div>
           <strong>${t.id}</strong> ${st} <span class="mini">${routeName}</span>
-          <div class="mini">Consist: ${consistList} | Chargé: ${loadedList}</div>
+          <div class="mini">Consist: ${consistList} | Chargé: ${loadedList} | Âge: ${age} an(s)</div>
           <div class="mini">À ${curStop} · ${t.state} · Vie: ${RailBaron.money(t.lifetimeProfit)} | Mois: ${RailBaron.money(t.monthlyRevenue)}</div>
           <div class="train-actions">
             ${t.status !== 'active' ? `<button class="tb-act" data-act="active" data-tid="${t.id}">▶</button>` : `<button class="tb-act" data-act="paused" data-tid="${t.id}">⏸</button>`}

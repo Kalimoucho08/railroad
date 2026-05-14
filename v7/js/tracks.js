@@ -16,10 +16,25 @@ RailBaron.Tracks = {
       return null;
     }
     gs.cash -= cost;
-    const edge = { id: gs.nextEdgeId(), a: nodeA.name, b: nodeB.name, cost };
+    const edge = { id: gs.nextEdgeId(), a: nodeA.name, b: nodeB.name, cost, builtTurn: gs.turn };
     gs.edges.push(edge);
     gs.addLog(`Ligne ${nodeA.name} ↔ ${nodeB.name} construite pour ${RailBaron.money(cost)}.`);
     return edge;
+  },
+
+  renovate(gs, nodeA, nodeB) {
+    const edge = gs.edges.find(e =>
+      (e.a === nodeA.name && e.b === nodeB.name) ||
+      (e.a === nodeB.name && e.b === nodeA.name)
+    );
+    if (!edge) { gs.addLog('Aucune voie a renover ici.'); return false; }
+    const C = RailBaron.CONFIG;
+    const cost = Math.round(edge.cost * C.RENOVATION_COST_RATIO);
+    if (gs.cash < cost) { gs.addLog(`Capital insuffisant (${RailBaron.money(cost)}).`); return false; }
+    gs.cash -= cost;
+    edge.builtTurn = gs.turn;
+    gs.addLog(`Voie ${edge.a} ↔ ${edge.b} renovee (${RailBaron.money(cost)}).`);
+    return true;
   },
 
   remove(gs, nodeA, nodeB) {

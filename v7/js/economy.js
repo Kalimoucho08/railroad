@@ -129,18 +129,42 @@ RailBaron.Economy = {
     return Math.round(cargo.baseRate * distFactor * speedFactor * ecoMult * stationMult * paxBonus);
   },
 
+  _yearsSince(turn, gs) {
+    return Math.max(0, (gs.turn - (turn || gs.turn)) / 12);
+  },
+
   // --- Cout entretien mensuel ---
   monthlyUpkeep(gs) {
     const C = RailBaron.CONFIG;
-    let total = gs.edges.length * 6;
+    let total = 0;
+
+    // Voies (age prorata)
+    for (const edge of gs.edges) {
+      const years = this._yearsSince(edge.builtTurn, gs);
+      total += C.EDGE_UPKEEP_BASE + (C.TRACK_AGING ? Math.floor(years) * C.EDGE_UPKEEP_PER_YEAR : 0);
+    }
+
+    // Stations
     for (const st of gs.stations) {
       total += st.size === 'depot' ? 200 : st.size === 'station' ? 400 : 800;
     }
+
+    // Trains (age + stationary/moving)
     for (const train of gs.trains) {
       if (train.status === 'paused') continue;
-      const mul = train.status === 'on_demand' ? 0.5 : 1.0;
+      const years = this._yearsSince(train.builtTurn, gs);
       const wc = train.consist ? Object.values(train.consist).reduce((a, b) => a + b, 0) : 4;
-      total += Math.round((C.TRAIN_UPKEEP_BASE + wc * C.TRAIN_UPKEEP_PER_WAGON) * mul);
+      const ageCost = C.TRAIN_AGING ? Math.floor(years) * C.TRAIN_UPKEEP_PER_YEAR : 0;
+      let baseCost = C.TRAIN_UPKEEP_BASE + wc * C.TRAIN_UPKEEP_PER_WAGON + ageCost;
+
+      // Differencier moving vs stationary
+      const isStationary = train.state === 'loading' || train.state === 'unloading';
+      if (isStationary) baseCost *= C.STATIONARY_COST_MULT;
+
+      // on_demand
+      if (train.status === 'on_demand') baseCost *= 0.5;
+
+      total += Math.round(baseCost);
     }
     return total;
   },

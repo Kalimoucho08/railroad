@@ -26,6 +26,7 @@ RailBaron.Trains = {
       trainType: 'limited',
       status: 'active',                  // active | paused | on_demand
       speed: C.BASE_SPEED + Math.random() * C.SPEED_VARIANCE,
+      builtTurn: gs.turn,
       monthlyRevenue: 0,
       lifetimeProfit: 0,
       deliveriesThisMonth: 0

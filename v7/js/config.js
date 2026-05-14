@@ -29,6 +29,17 @@ RailBaron.CONFIG = {
   SPEED_VARIANCE: 0.0004,
   MAX_STOCK: 20,
 
+  // --- Maintenance ---
+  TRACK_AGING: true,
+  TRAIN_AGING: true,
+  EDGE_UPKEEP_BASE: 6,           // €/mois par segment
+  EDGE_UPKEEP_PER_YEAR: 1,       // +€/mois par annee d'age
+  TRAIN_UPKEEP_BASE: 20,
+  TRAIN_UPKEEP_PER_WAGON: 5,
+  TRAIN_UPKEEP_PER_YEAR: 5,      // +€/mois par annee d'age
+  RENOVATION_COST_RATIO: 0.5,    // % du cout de construction
+  STATIONARY_COST_MULT: 0.5,     // train a l'arret = 50% du cout
+
   // --- Trains ---
   TRAIN_COST: 50000,
   WAGON_COST: 5000,

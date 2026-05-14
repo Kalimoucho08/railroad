@@ -53,10 +53,19 @@ RailBaron.Renderer = {
   },
 
   _drawTracks(gs, ctx) {
+    const C = RailBaron.CONFIG;
     for (const e of gs.edges) {
       const a = gs.getNode(e.a);
       const b = gs.getNode(e.b);
-      ctx.strokeStyle = '#dcc9a1';
+      // Couleur selon age : vert (recent) → orange (5+ ans) → rouge (10+ ans)
+      const years = Math.max(0, (gs.turn - (e.builtTurn || gs.turn)) / 12);
+      let color;
+      if (years < 3) color = '#7a9a5a';       // vert
+      else if (years < 7) color = '#dcc9a1';   // beige (normal)
+      else if (years < 12) color = '#d4a84b';   // orange
+      else color = '#c4704a';                   // rouge
+
+      ctx.strokeStyle = color;
       ctx.lineWidth = 6;
       ctx.beginPath();
       ctx.moveTo(a.x, a.y);
