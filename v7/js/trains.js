@@ -56,6 +56,10 @@ RailBaron.Trains = {
       if (train.status === 'paused') continue;
       const route = gs.routes.find(r => r.id === train.routeId);
       if (!route) continue;
+
+      // Pause globale : seuls les trains en moving terminent leur segment
+      if (gs.speed === 0 && train.state !== 'moving') continue;
+
       switch (train.state) {
         case 'loading':   this._stepLoading(train, route, gs);   break;
         case 'moving':    this._stepMoving(train, route);         break;
@@ -88,7 +92,7 @@ RailBaron.Trains = {
       return;
     }
 
-    train.timer += C.TICK_MS * Math.max(1, gs.speed);
+    train.timer += C.TICK_MS * gs.speed;
 
     for (const [r, maxW] of Object.entries(train.consist)) {
       const current = train.wagonsLoaded[r] || 0;
@@ -149,7 +153,7 @@ RailBaron.Trains = {
       return;
     }
 
-    train.timer += C.TICK_MS * Math.max(1, gs.speed);
+    train.timer += C.TICK_MS * gs.speed;
 
     for (const [r, loaded] of Object.entries(train.wagonsLoaded)) {
       if (loaded > 0 && accepts.has(r) && train.timer > C.UNLOAD_TIME) {
