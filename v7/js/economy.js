@@ -133,14 +133,34 @@ RailBaron.Economy = {
     return Math.max(0, (gs.turn - (turn || gs.turn)) / 12);
   },
 
+  // Edges utilises par des trains actifs (non paused)
+  _getActiveEdgeIds(gs) {
+    const active = new Set();
+    for (const train of gs.trains) {
+      if (train.status === 'paused') continue;
+      const route = gs.routes.find(r => r.id === train.routeId);
+      if (!route) continue;
+      for (let i = 0; i < route.fullPath.length - 1; i++) {
+        const edge = gs.edges.find(e =>
+          (e.a === route.fullPath[i] && e.b === route.fullPath[i + 1]) ||
+          (e.a === route.fullPath[i + 1] && e.b === route.fullPath[i])
+        );
+        if (edge) active.add(edge.id);
+      }
+    }
+    return active;
+  },
+
   // --- Cout entretien mensuel ---
   monthlyUpkeep(gs) {
     const C = RailBaron.CONFIG;
     let total = 0;
+    const activeEdges = this._getActiveEdgeIds(gs);
 
-    // Voies (age prorata)
+    // Voies (age uniquement si utilisees)
     for (const edge of gs.edges) {
-      const years = this._yearsSince(edge.builtTurn, gs);
+      const isActive = activeEdges.has(edge.id);
+      const years = isActive ? this._yearsSince(edge.builtTurn, gs) : 0;
       total += C.EDGE_UPKEEP_BASE + (C.TRACK_AGING ? Math.floor(years) * C.EDGE_UPKEEP_PER_YEAR : 0);
     }
 

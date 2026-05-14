@@ -54,14 +54,16 @@ RailBaron.Renderer = {
 
   _drawTracks(gs, ctx) {
     const C = RailBaron.CONFIG;
+    const activeEdges = RailBaron.Economy._getActiveEdgeIds(gs);
     for (const e of gs.edges) {
       const a = gs.getNode(e.a);
       const b = gs.getNode(e.b);
-      // Couleur selon age : vert (recent) → orange (5+ ans) → rouge (10+ ans)
-      const years = Math.max(0, (gs.turn - (e.builtTurn || gs.turn)) / 12);
+      // Couleur selon age (seulement si la voie est utilisee)
+      const isActive = activeEdges.has(e.id);
+      const years = isActive ? Math.max(0, (gs.turn - (e.builtTurn || gs.turn)) / 12) : 0;
       let color;
-      if (years < 3) color = '#7a9a5a';       // vert
-      else if (years < 7) color = '#dcc9a1';   // beige (normal)
+      if (years < 3) color = '#7a9a5a';       // vert/neuf
+      else if (years < 7) color = '#dcc9a1';   // beige
       else if (years < 12) color = '#d4a84b';   // orange
       else color = '#c4704a';                   // rouge
 
