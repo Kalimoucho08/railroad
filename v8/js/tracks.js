@@ -1,17 +1,89 @@
 RailBaron.Tracks = {
 
-  // Calcule le type de terrain effectif entre deux noeuds
-  _edgeTerrain(nodeA, nodeB) {
+  // Distance d'un point a un segment
+  _distToSegment(px, py, x1, y1, x2, y2) {
+    const dx = x2 - x1, dy = y2 - y1;
+    const len2 = dx*dx + dy*dy;
+    if (len2 === 0) return Math.hypot(px - x1, py - y1);
+    let t = ((px - x1) * dx + (py - y1) * dy) / len2;
+    t = Math.max(0, Math.min(1, t));
+    return Math.hypot(px - (x1 + t*dx), py - (y1 + t*dy));
+  },
+
+  // Intersection de deux segments (pour les rivieres)
+  _segmentsCross(x1,y1,x2,y2,x3,y3,x4,y4) {
+    const d = (x1-x2)*(y3-y4) - (y1-y2)*(x3-x4);
+    if (Math.abs(d) < 0.001) return false;
+    const t = ((x1-x3)*(y3-y4) - (y1-y3)*(x3-x4)) / d;
+    const u = -((x1-x2)*(y1-y3) - (y1-y2)*(x1-x3)) / d;
+    return t >= 0 && t <= 1 && u >= 0 && u <= 1;
+  },
+
+  // Verifie si le segment croise une riviere
+  _crossesRiver(x1, y1, x2, y2) {
+    const C = RailBaron.CONFIG;
+    for (const river of C.RIVERS) {
+      for (let i = 0; i < river.points.length - 1; i++) {
+        const p1 = river.points[i], p2 = river.points[i+1];
+        if (this._segmentsCross(x1, y1, x2, y2, p1[0], p1[1], p2[0], p2[1])) {
+          return river.name;
+        }
+      }
+    }
+    return null;
+  },
+
+  // Verifie si le segment traverse une zone (foret ou montagne)
+  _crossesZone(x1, y1, x2, y2, zones) {
+    for (const z of zones) {
+      if (this._distToSegment(z.x, z.y, x1, y1, x2, y2) < z.r) {
+        return true;
+      }
+    }
+    return false;
+  },
+
+  // Determine le terrain reel traverse par le segment
+  _getCrossingTerrain(nodeA, nodeB) {
+    const C = RailBaron.CONFIG;
+    const x1 = nodeA.x, y1 = nodeA.y, x2 = nodeB.x, y2 = nodeB.y;
+    const result = { terrain: 'plains', needsBridge: false, needsTunnel: false, notes: [] };
+
+    // Terrain des noeuds (le plus difficile)
     const ta = nodeA.terrain || 'plains';
     const tb = nodeB.terrain || 'plains';
-    const T = RailBaron.CONFIG.TERRAIN_TYPES;
-    // Le plus difficile des deux (max costMult)
-    const tA = T[ta] || T.plains;
-    const tB = T[tb] || T.plains;
-    const eff = tA.costMult >= tB.costMult ? ta : tb;
-    // Si l'un est 'water', l'autre aussi (eau → eau)
-    if (ta === 'water' || tb === 'water') return 'water';
-    return eff;
+    const tA = C.TERRAIN_TYPES[ta] || C.TERRAIN_TYPES.plains;
+    const tB = C.TERRAIN_TYPES[tb] || C.TERRAIN_TYPES.plains;
+    result.terrain = tA.costMult >= tB.costMult ? ta : tb;
+    if (ta === 'water' || tb === 'water') result.terrain = 'water';
+    result.needsBridge = C.TERRAIN_TYPES[result.terrain]?.needsBridge || false;
+
+    // Croisement de riviere → pont obligatoire
+    const riverName = this._crossesRiver(x1, y1, x2, y2);
+    if (riverName) {
+      result.needsBridge = true;
+      result.notes.push('pont sur ' + riverName);
+    }
+
+    // Traversee de montagne → possible tunnel
+    const crossesMountains = this._crossesZone(x1, y1, x2, y2, C.MOUNTAINS);
+    if (crossesMountains && result.terrain !== 'mountains') {
+      result.terrain = 'mountains';
+    }
+    const avgElev = ((nodeA.elevation || 0) + (nodeB.elevation || 0)) / 2;
+    const elevDiff = Math.abs((nodeA.elevation || 0) - (nodeB.elevation || 0));
+    if ((crossesMountains || result.terrain === 'mountains') && (elevDiff > 30 || avgElev > C.TUNNEL_MIN_ELEVATION)) {
+      result.needsTunnel = true;
+      result.notes.push('tunnel');
+    }
+
+    // Traversee de foret
+    if (this._crossesZone(x1, y1, x2, y2, C.FORESTS) && result.terrain === 'plains') {
+      result.terrain = 'hills'; // foret = legerement plus difficile
+      result.notes.push('foret');
+    }
+
+    return result;
   },
 
   build(gs, nodeA, nodeB) {
@@ -25,19 +97,12 @@ RailBaron.Tracks = {
     }
     const C = RailBaron.CONFIG;
     const d = RailBaron.dist(nodeA, nodeB);
-    const terrain = this._edgeTerrain(nodeA, nodeB);
-    const tDef = C.TERRAIN_TYPES[terrain] || C.TERRAIN_TYPES.plains;
+    const crossing = this._getCrossingTerrain(nodeA, nodeB);
+    const tDef = C.TERRAIN_TYPES[crossing.terrain] || C.TERRAIN_TYPES.plains;
 
-    // Cout = base + distance × multiplicateur terrain
     const cost = Math.round((d * C.EDGE_COST_PER_PX + C.EDGE_COST_BASE) * tDef.costMult);
-    // Pont si le terrain est aquatique
-    const needsBridge = tDef.needsBridge;
-    const bridgeCost = needsBridge ? C.BRIDGE_COST : 0;
-    // Tunnel si montagne avec forte pente
-    const avgElev = ((nodeA.elevation || 0) + (nodeB.elevation || 0)) / 2;
-    const elevDiff = Math.abs((nodeA.elevation || 0) - (nodeB.elevation || 0));
-    const needsTunnel = (terrain === 'mountains' && elevDiff > 30) || avgElev > C.TUNNEL_MIN_ELEVATION;
-    const tunnelCost = needsTunnel ? C.TUNNEL_COST : 0;
+    const bridgeCost = crossing.needsBridge ? C.BRIDGE_COST : 0;
+    const tunnelCost = crossing.needsTunnel ? C.TUNNEL_COST : 0;
     const totalCost = cost + bridgeCost + tunnelCost;
 
     if (gs.cash < totalCost) {
@@ -47,14 +112,11 @@ RailBaron.Tracks = {
     gs.cash -= totalCost;
     const edge = {
       id: gs.nextEdgeId(), a: nodeA.name, b: nodeB.name,
-      cost: totalCost, terrain, builtTurn: gs.turn,
-      hasTunnel: needsTunnel, hasBridge: needsBridge
+      cost: totalCost, terrain: crossing.terrain, builtTurn: gs.turn,
+      hasTunnel: crossing.needsTunnel, hasBridge: crossing.needsBridge
     };
     gs.edges.push(edge);
-    const notes = [];
-    if (needsBridge) notes.push('pont');
-    if (needsTunnel) notes.push('tunnel');
-    const noteStr = notes.length ? ' (' + notes.join('+') + ')' : '';
+    const noteStr = crossing.notes.length ? ' (' + crossing.notes.join(', ') + ')' : '';
     gs.addLog(`Voie ${nodeA.name} ↔ ${nodeB.name} (${tDef.label})${noteStr} : ${RailBaron.money(totalCost)}.`);
     return edge;
   },
