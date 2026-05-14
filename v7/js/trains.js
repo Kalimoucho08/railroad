@@ -13,7 +13,8 @@ RailBaron.Trains = {
     gs.cash -= cost;
     const train = {
       id: gs.nextTrainId(), routeId: route.id, consist: { ...consist },
-      stopsAt: stopsAt || route.stops.map(() => true),
+      // stopsAt mappe sur fullPath : true si la gare est un arret declare
+      stopsAt: route.fullPath.map(n => route.stops.includes(n)),
       wagonsLoaded: {}, currentStopIndex: 0, direction: 1,
       state: 'loading', progress: 0, timer: 0,
       trainType: 'limited', status: 'active',
@@ -64,12 +65,12 @@ RailBaron.Trains = {
   },
 
   _currentNode(train, route) {
-    return RailBaron.findNode(route.stops[train.currentStopIndex]);
+    return RailBaron.findNode(route.fullPath[train.currentStopIndex]);
   },
 
   _nextIndex(train, route) {
     const ni = train.currentStopIndex + train.direction;
-    if (ni >= route.stops.length || ni < 0) {
+    if (ni >= route.fullPath.length || ni < 0) {
       train.direction *= -1;
       return train.currentStopIndex + train.direction;
     }
@@ -79,7 +80,7 @@ RailBaron.Trains = {
   // === LOADING ===
   _stepLoading(train, route, gs) {
     const C = RailBaron.CONFIG;
-    const nodeName = route.stops[train.currentStopIndex];
+    const nodeName = route.fullPath[train.currentStopIndex];
     const stocks = gs.stocks[nodeName];
 
     if (!train.stopsAt[train.currentStopIndex]) {
@@ -116,11 +117,11 @@ RailBaron.Trains = {
   _stepMoving(train, route) {
     const C = RailBaron.CONFIG;
     const curNode = this._currentNode(train, route);
-    if (!curNode || train.currentStopIndex >= route.stops.length) {
+    if (!curNode || train.currentStopIndex >= route.fullPath.length) {
       train.currentStopIndex = 0; train.state = 'loading'; return;
     }
     const nextIdx = this._nextIndex(train, route);
-    const nextNode = RailBaron.findNode(route.stops[nextIdx]);
+    const nextNode = RailBaron.findNode(route.fullPath[nextIdx]);
     if (!nextNode) { train.state = 'loading'; return; }
     const dist = RailBaron.dist(curNode, nextNode);
 
@@ -139,7 +140,7 @@ RailBaron.Trains = {
   // === UNLOADING ===
   _stepUnloading(train, route, gs) {
     const C = RailBaron.CONFIG;
-    const nodeName = route.stops[train.currentStopIndex];
+    const nodeName = route.fullPath[train.currentStopIndex];
     const node = gs.getNode(nodeName);
     const accepts = RailBaron.Tracks._getAcceptsList(node);
 
@@ -157,7 +158,7 @@ RailBaron.Trains = {
         train.deliveriesThisMonth = (train.deliveriesThisMonth || 0) + 1;
 
         const prevIdx = train.currentStopIndex - train.direction;
-        const fromNodeName = (prevIdx >= 0 && prevIdx < route.stops.length) ? route.stops[prevIdx] : nodeName;
+        const fromNodeName = (prevIdx >= 0 && prevIdx < route.fullPath.length) ? route.fullPath[prevIdx] : nodeName;
         const fromNode = gs.getNode(fromNodeName);
         const gain = RailBaron.Economy.revenuePerDelivery(r, fromNode, node, train.trainType, gs);
         train.monthlyRevenue += gain;

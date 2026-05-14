@@ -271,7 +271,7 @@ RailBaron.UI = {
       const consist = this._readConsist();
       if (Object.keys(consist).length === 0) { this.gs.addLog('Ajoutez au moins un wagon.'); return; }
       const route = this.gs.routes.find(r => r.id === routeId);
-      const stopsAt = route ? route.stops.map(() => true) : null;
+      const stopsAt = route ? route.fullPath.map(n => route.stops.includes(n)) : null;
       RailBaron.Trains.spawn(this.gs, routeId, consist, stopsAt);
       this.refreshSelectors();
       this.updateSidebar();
@@ -425,7 +425,7 @@ RailBaron.UI = {
       const routeName = route ? route.name : '?';
       const stLabels = { active: '', paused: 'PAUSE', on_demand: 'DEM.' };
       const st = stLabels[t.status] || '';
-      const curStop = route ? route.stops[t.currentStopIndex] : '?';
+      const curStop = route ? route.fullPath[t.currentStopIndex] : '?';
       const age = Math.floor(Math.max(0, (gs.turn - (t.builtTurn || gs.turn)) / 12));
       return `<div class="tr-row" data-train="${t.id}">
         <div>

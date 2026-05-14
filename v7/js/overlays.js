@@ -119,7 +119,7 @@ RailBaron.Overlays = {
     let body = `<p><strong>Route:</strong> ${routeName}</p>`;
     body += `<p><strong>Consist:</strong> ${consistList}</p>`;
     body += `<p><strong>Charge:</strong> ${loadedList}</p>`;
-    body += `<p><strong>Arret:</strong> ${route ? route.stops[train.currentStopIndex] : '?'} · ${train.state}</p>`;
+    body += `<p><strong>Arret:</strong> ${route ? route.fullPath[train.currentStopIndex] : '?'} · ${train.state}</p>`;
     body += `<p><strong>Type:</strong> ${train.trainType === 'limited' ? 'Limited (express)' : 'Local'} | ${train.status}</p>`;
     body += `<p><strong>Recettes mois:</strong> ${RailBaron.money(train.monthlyRevenue)}</p>`;
     body += `<p><strong>Profit total:</strong> ${RailBaron.money(train.lifetimeProfit)}</p>`;

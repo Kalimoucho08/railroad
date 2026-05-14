@@ -140,18 +140,20 @@ RailBaron.Renderer = {
     });
   },
 
-  // Route en cours de construction (pointilles)
+  // Route en cours de construction (calcule le fullPath pour les pointilles)
   _drawBuildingRoute(gs, ctx) {
     const stops = gs._buildingRoute;
     if (!stops || stops.length < 2) return;
+    const fullPath = RailBaron.Routes._buildFullPath(gs, stops);
+    if (!fullPath) return;
     ctx.strokeStyle = '#ffdd44';
     ctx.lineWidth = 3;
     ctx.setLineDash([8, 6]);
     ctx.beginPath();
-    const first = gs.getNode(stops[0]);
+    const first = gs.getNode(fullPath[0]);
     ctx.moveTo(first.x, first.y);
-    for (let i = 1; i < stops.length; i++) {
-      const n = gs.getNode(stops[i]);
+    for (let i = 1; i < fullPath.length; i++) {
+      const n = gs.getNode(fullPath[i]);
       ctx.lineTo(n.x, n.y);
     }
     ctx.stroke();
@@ -161,11 +163,11 @@ RailBaron.Renderer = {
   _drawTrain(train, gs, ctx) {
     const route = gs.routes.find(r => r.id === train.routeId);
     if (!route) return;
-    const curNode = gs.getNode(route.stops[train.currentStopIndex]);
+    const curNode = gs.getNode(route.fullPath[train.currentStopIndex]);
     const dir = train.direction;
     const nextIdx = train.currentStopIndex + dir;
-    if (nextIdx < 0 || nextIdx >= route.stops.length) return;
-    const nextNode = gs.getNode(route.stops[nextIdx]);
+    if (nextIdx < 0 || nextIdx >= route.fullPath.length) return;
+    const nextNode = gs.getNode(route.fullPath[nextIdx]);
 
     const p = train.progress;
     const x = curNode.x + (nextNode.x - curNode.x) * p;
@@ -209,10 +211,10 @@ RailBaron.Renderer = {
       ctx.lineWidth = 4;
       ctx.lineCap = 'round';
       ctx.beginPath();
-      const first = gs.getNode(route.stops[0]);
+      const first = gs.getNode(route.fullPath[0]);
       ctx.moveTo(first.x, first.y);
-      for (let i = 1; i < route.stops.length; i++) {
-        const n = gs.getNode(route.stops[i]);
+      for (let i = 1; i < route.fullPath.length; i++) {
+        const n = gs.getNode(route.fullPath[i]);
         ctx.lineTo(n.x, n.y);
       }
       ctx.stroke();
@@ -238,10 +240,10 @@ RailBaron.Renderer = {
     for (const train of gs.trains) {
       const route = gs.routes.find(r => r.id === train.routeId);
       if (!route) continue;
-      const curNode = gs.getNode(route.stops[train.currentStopIndex]);
+      const curNode = gs.getNode(route.fullPath[train.currentStopIndex]);
       const nextIdx = train.currentStopIndex + train.direction;
-      if (nextIdx < 0 || nextIdx >= route.stops.length) continue;
-      const nextNode = gs.getNode(route.stops[nextIdx]);
+      if (nextIdx < 0 || nextIdx >= route.fullPath.length) continue;
+      const nextNode = gs.getNode(route.fullPath[nextIdx]);
       const p = train.progress;
       const tx = curNode.x + (nextNode.x - curNode.x) * p;
       const ty = curNode.y + (nextNode.y - curNode.y) * p;
