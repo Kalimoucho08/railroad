@@ -157,11 +157,14 @@ RailBaron.Economy = {
     let total = 0;
     const activeEdges = this._getActiveEdgeIds(gs);
 
-    // Voies (age uniquement si utilisees)
+    // Voies (age uniquement si utilisees, × multiplicateur terrain)
     for (const edge of gs.edges) {
       const isActive = activeEdges.has(edge.id);
       const years = isActive ? this._yearsSince(edge.builtTurn, gs) : 0;
-      total += C.EDGE_UPKEEP_BASE + (C.TRACK_AGING ? Math.floor(years) * C.EDGE_UPKEEP_PER_YEAR : 0);
+      const terrainDef = C.TERRAIN_TYPES[edge.terrain] || C.TERRAIN_TYPES.plains;
+      const wearMult = terrainDef.wearMult || 1.0;
+      const agingCost = C.TRACK_AGING ? Math.floor(years) * C.EDGE_UPKEEP_PER_YEAR : 0;
+      total += Math.round((C.EDGE_UPKEEP_BASE + agingCost) * wearMult);
     }
 
     // Stations

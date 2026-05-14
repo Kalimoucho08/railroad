@@ -22,7 +22,8 @@ RailBaron.Overlays = {
     const stocked = Object.entries(stocks).filter(([,v]) => v > 0);
 
     let html = `<div class="tt-name">${node.name}</div>`;
-    html += `<div class="tt-row"><span>${node.type}</span></div>`;
+    const tDef = C.TERRAIN_TYPES[node.terrain] || C.TERRAIN_TYPES.plains;
+    html += `<div class="tt-row"><span>${node.type}</span><span>${tDef.label} (${node.elevation || '?'}m)</span></div>`;
 
     // Production
     if (node.type === 'city') {

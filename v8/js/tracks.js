@@ -1,4 +1,19 @@
 RailBaron.Tracks = {
+
+  // Calcule le type de terrain effectif entre deux noeuds
+  _edgeTerrain(nodeA, nodeB) {
+    const ta = nodeA.terrain || 'plains';
+    const tb = nodeB.terrain || 'plains';
+    const T = RailBaron.CONFIG.TERRAIN_TYPES;
+    // Le plus difficile des deux (max costMult)
+    const tA = T[ta] || T.plains;
+    const tB = T[tb] || T.plains;
+    const eff = tA.costMult >= tB.costMult ? ta : tb;
+    // Si l'un est 'water', l'autre aussi (eau → eau)
+    if (ta === 'water' || tb === 'water') return 'water';
+    return eff;
+  },
+
   build(gs, nodeA, nodeB) {
     if (nodeA.name === nodeB.name) {
       gs.addLog('Impossible de relier un site à lui-même.');
@@ -10,15 +25,28 @@ RailBaron.Tracks = {
     }
     const C = RailBaron.CONFIG;
     const d = RailBaron.dist(nodeA, nodeB);
-    const cost = Math.round(d * C.EDGE_COST_PER_PX + C.EDGE_COST_BASE);
-    if (gs.cash < cost) {
-      gs.addLog(`Capital insuffisant (coût : ${RailBaron.money(cost)}).`);
+    const terrain = this._edgeTerrain(nodeA, nodeB);
+    const tDef = C.TERRAIN_TYPES[terrain] || C.TERRAIN_TYPES.plains;
+
+    // Cout = base + distance × multiplicateur terrain
+    const cost = Math.round((d * C.EDGE_COST_PER_PX + C.EDGE_COST_BASE) * tDef.costMult);
+    // Pont si le terrain est aquatique
+    const needsBridge = tDef.needsBridge;
+    const bridgeCost = needsBridge ? C.BRIDGE_COST : 0;
+    const totalCost = cost + bridgeCost;
+
+    if (gs.cash < totalCost) {
+      gs.addLog(`Capital insuffisant (cout : ${RailBaron.money(totalCost)}).`);
       return null;
     }
-    gs.cash -= cost;
-    const edge = { id: gs.nextEdgeId(), a: nodeA.name, b: nodeB.name, cost, builtTurn: gs.turn };
+    gs.cash -= totalCost;
+    const edge = {
+      id: gs.nextEdgeId(), a: nodeA.name, b: nodeB.name,
+      cost: totalCost, terrain, builtTurn: gs.turn
+    };
     gs.edges.push(edge);
-    gs.addLog(`Ligne ${nodeA.name} ↔ ${nodeB.name} construite pour ${RailBaron.money(cost)}.`);
+    const bridgeNote = needsBridge ? ' (avec pont)' : '';
+    gs.addLog(`Voie ${nodeA.name} ↔ ${nodeB.name} (${tDef.label})${bridgeNote} : ${RailBaron.money(totalCost)}.`);
     return edge;
   },
 

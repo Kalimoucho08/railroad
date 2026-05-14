@@ -129,8 +129,16 @@ RailBaron.Trains = {
     if (!nextNode) { train.state = 'loading'; return; }
     const dist = RailBaron.dist(curNode, nextNode);
 
-    // Vitesse du train (pixels/ms) × facteur jeu. 100 = echelle visuelle
-    const speedMul = (gs && gs.speed) || 1;
+    // Trouver l'edge pour connaitre le terrain
+    const edge = gs.edges.find(e =>
+      (e.a === curNode.name && e.b === nextNode.name) ||
+      (e.a === nextNode.name && e.b === curNode.name)
+    );
+    const terrain = (edge && edge.terrain) || 'plains';
+    const tDef = RailBaron.CONFIG.TERRAIN_TYPES[terrain] || RailBaron.CONFIG.TERRAIN_TYPES.plains;
+
+    // Vitesse du train × facteur jeu × multiplicateur terrain
+    const speedMul = ((gs && gs.speed) || 1) * tDef.speedMult;
     const segmentTime = dist / (train.speed * 80 * speedMul);
     if (segmentTime <= 0) { train.progress = 1; }
     else { train.progress += C.TICK_MS / segmentTime; }

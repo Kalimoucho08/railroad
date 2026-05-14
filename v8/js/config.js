@@ -37,8 +37,19 @@ RailBaron.CONFIG = {
   TRAIN_UPKEEP_BASE: 20,
   TRAIN_UPKEEP_PER_WAGON: 5,
   TRAIN_UPKEEP_PER_YEAR: 5,      // +€/mois par annee d'age
-  RENOVATION_COST_RATIO: 0.5,    // % du cout de construction
-  STATIONARY_COST_MULT: 0.5,     // train a l'arret = 50% du cout
+  RENOVATION_COST_RATIO: 0.5,
+  STATIONARY_COST_MULT: 0.5,
+
+  // --- Terrains ---
+  TERRAIN_TYPES: {
+    plains:    { label: 'Plaine',  costMult: 1.0, speedMult: 1.0, wearMult: 1.0, color: '#4a7a3a' },
+    hills:     { label: 'Colline', costMult: 1.8, speedMult: 0.7, wearMult: 1.5, color: '#6b8c42' },
+    mountains: { label: 'Montagne',costMult: 3.0, speedMult: 0.4, wearMult: 2.5, color: '#8b7355' },
+    water:     { label: 'Eau',     costMult: 5.0, speedMult: 0.6, wearMult: 3.0, color: '#2a6a93', needsBridge: true },
+    coast:     { label: 'Littoral',costMult: 1.3, speedMult: 0.9, wearMult: 1.2, color: '#5b8c7a' }
+  },
+  // Cout supplementaire pour un pont (si le segment traverse de l'eau)
+  BRIDGE_COST: 50000,
 
   // --- Trains ---
   TRAIN_COST: 50000,
@@ -137,27 +148,27 @@ RailBaron.CONFIG = {
   // =============================================
   NODES: [
     // Villes (produisent passagers + mail, consomment biens finis)
-    { name: 'Lille',              x: 170, y: 120, type: 'city', consumes: ['goods','food','steel'],                 pop: 3 },
-    { name: 'Rouen',              x: 320, y: 170, type: 'city', consumes: ['goods','food','steel','textiles'],      pop: 2 },
-    { name: 'Paris',              x: 470, y: 180, type: 'city', consumes: ['goods','food','steel','textiles','petroleum'], pop: 5 },
-    { name: 'Nancy',              x: 670, y: 160, type: 'city', consumes: ['goods','steel','textiles'],             pop: 2 },
-    { name: 'Lyon',               x: 620, y: 360, type: 'city', consumes: ['goods','food','steel','textiles'],      pop: 4 },
-    { name: 'Nantes',             x: 220, y: 360, type: 'city', consumes: ['goods','food','textiles'],              pop: 2 },
-    { name: 'Bordeaux',           x: 250, y: 530, type: 'city', consumes: ['goods','food','steel'],                 pop: 2 },
-    { name: 'Marseille',          x: 760, y: 540, type: 'city', consumes: ['goods','food','steel','textiles'],      pop: 4 },
+    { name: 'Lille',              x: 170, y: 120, type: 'city', consumes: ['goods','food','steel'],                 pop: 3, terrain: 'plains',  elevation: 20 },
+    { name: 'Rouen',              x: 320, y: 170, type: 'city', consumes: ['goods','food','steel','textiles'],      pop: 2, terrain: 'plains',  elevation: 30 },
+    { name: 'Paris',              x: 470, y: 180, type: 'city', consumes: ['goods','food','steel','textiles','petroleum'], pop: 5, terrain: 'plains',  elevation: 35 },
+    { name: 'Nancy',              x: 670, y: 160, type: 'city', consumes: ['goods','steel','textiles'],             pop: 2, terrain: 'hills',   elevation: 60 },
+    { name: 'Lyon',               x: 620, y: 360, type: 'city', consumes: ['goods','food','steel','textiles'],      pop: 4, terrain: 'hills',   elevation: 55 },
+    { name: 'Nantes',             x: 220, y: 360, type: 'city', consumes: ['goods','food','textiles'],              pop: 2, terrain: 'plains',  elevation: 15 },
+    { name: 'Bordeaux',           x: 250, y: 530, type: 'city', consumes: ['goods','food','steel'],                 pop: 2, terrain: 'plains',  elevation: 25 },
+    { name: 'Marseille',          x: 760, y: 540, type: 'city', consumes: ['goods','food','steel','textiles'],      pop: 4, terrain: 'coast',   elevation: 40 },
 
     // Producteurs de matieres premieres
-    { name: 'Foret des Ardennes', x: 520, y: 70,  type: 'producer', produces: 'lumber',    prodRate: 3 },
-    { name: 'Bassin Minier Nord', x: 760, y: 90,  type: 'producer', produces: 'coal',      prodRate: 4 },
-    { name: 'Plaine de Beauce',   x: 390, y: 300, type: 'producer', produces: 'grain',     prodRate: 4 },
-    { name: 'Mine de fer Est',    x: 920, y: 180, type: 'producer', produces: 'iron_ore',  prodRate: 3 },
-    { name: 'Port Atlantique',    x: 110, y: 500, type: 'producer', produces: 'oil',       prodRate: 3 },
+    { name: 'Foret des Ardennes', x: 520, y: 70,  type: 'producer', produces: 'lumber',    prodRate: 3, terrain: 'hills',     elevation: 70 },
+    { name: 'Bassin Minier Nord', x: 760, y: 90,  type: 'producer', produces: 'coal',      prodRate: 4, terrain: 'hills',     elevation: 55 },
+    { name: 'Plaine de Beauce',   x: 390, y: 300, type: 'producer', produces: 'grain',     prodRate: 4, terrain: 'plains',    elevation: 20 },
+    { name: 'Mine de fer Est',    x: 920, y: 180, type: 'producer', produces: 'iron_ore',  prodRate: 3, terrain: 'mountains', elevation: 75 },
+    { name: 'Port Atlantique',    x: 110, y: 500, type: 'producer', produces: 'oil',       prodRate: 3, terrain: 'coast',     elevation: 10 },
 
     // Industries de transformation
-    { name: 'Hauts Fourneaux',    x: 860, y: 260, type: 'steel_mill',   consumes: ['coal','iron_ore'],  produces: 'steel',     prodRate: 1.5 },
-    { name: 'Usine du Nord',      x: 580, y: 130, type: 'factory',      consumes: ['steel'],            produces: 'goods',     prodRate: 2.0 },
-    { name: 'Filature du Midi',   x: 860, y: 430, type: 'factory',      consumes: ['steel'],            produces: 'goods',     prodRate: 1.5 },
-    { name: 'Scierie Alpine',     x: 700, y: 300, type: 'sawmill',      consumes: ['lumber'],           produces: 'goods',     prodRate: 1.5 }
+    { name: 'Hauts Fourneaux',    x: 860, y: 260, type: 'steel_mill', consumes: ['coal','iron_ore'],  produces: 'steel',  prodRate: 1.5, terrain: 'hills',     elevation: 50 },
+    { name: 'Usine du Nord',      x: 580, y: 130, type: 'factory',    consumes: ['steel'],            produces: 'goods',  prodRate: 2.0, terrain: 'plains',    elevation: 30 },
+    { name: 'Filature du Midi',   x: 860, y: 430, type: 'factory',    consumes: ['steel'],            produces: 'goods',  prodRate: 1.5, terrain: 'hills',     elevation: 45 },
+    { name: 'Scierie Alpine',     x: 700, y: 300, type: 'sawmill',    consumes: ['lumber'],           produces: 'goods',  prodRate: 1.5, terrain: 'mountains', elevation: 80 }
   ],
 
   // Couleurs par type de noeud

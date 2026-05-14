@@ -15,6 +15,7 @@ RailBaron.Renderer = {
 
     camera.apply(ctx);
     this._drawBackground(ctx);
+    this._drawTerrain(gs, ctx);
     this._drawTracks(gs, ctx);
     this._drawRoutes(gs, ctx);
     this._drawBuildingRoute(gs, ctx);
@@ -50,6 +51,20 @@ RailBaron.Renderer = {
     ctx.lineTo(0, H);
     ctx.closePath();
     ctx.fill();
+  },
+
+  // Cercles de terrain autour des noeuds
+  _drawTerrain(gs, ctx) {
+    const C = RailBaron.CONFIG;
+    for (const node of C.NODES) {
+      const tDef = C.TERRAIN_TYPES[node.terrain] || C.TERRAIN_TYPES.plains;
+      ctx.fillStyle = tDef.color;
+      ctx.globalAlpha = 0.25;
+      ctx.beginPath();
+      ctx.arc(node.x, node.y, 35, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.globalAlpha = 1.0;
+    }
   },
 
   _drawTracks(gs, ctx) {
