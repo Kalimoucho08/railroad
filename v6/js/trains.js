@@ -197,6 +197,11 @@ RailBaron.Trains = {
     const allEmpty = Object.values(train.wagonsLoaded).every(v => (v || 0) === 0);
     if (allEmpty) {
       train.state = 'loading'; train.timer = 0;
+    } else {
+      const canUnloadAny = Object.entries(train.wagonsLoaded).some(([r, loaded]) => loaded > 0 && accepts.has(r));
+      if (!canUnloadAny && train.timer > C.UNLOAD_TIME * 2) {
+        train.state = 'loading'; train.timer = 0;
+      }
     }
   }
 };

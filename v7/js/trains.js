@@ -198,6 +198,13 @@ RailBaron.Trains = {
     if (allEmpty) {
       train.state = 'loading'; train.timer = 0;
       console.log(`[${train.id}] ✓ EMPTY at ${nodeName} → loading`);
+    } else {
+      // Cargo a bord mais cette gare ne l'accepte pas → ne pas bloquer
+      const canUnloadAny = Object.entries(train.wagonsLoaded).some(([r, loaded]) => loaded > 0 && accepts.has(r));
+      if (!canUnloadAny && train.timer > C.UNLOAD_TIME * 2) {
+        train.state = 'loading'; train.timer = 0;
+        console.log(`[${train.id}] ⚠ ${nodeName} n'accepte pas [${Object.entries(train.wagonsLoaded).filter(([,v])=>v>0).map(([r])=>r).join(',')}] → skip unloading`);
+      }
     }
   }
 };
